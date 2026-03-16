@@ -348,7 +348,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         print(f"[{self.log_date_time_string()}] {format % args}")
 
 def run_server():
-    port = 8001
+    port = 5000
     server = HTTPServer(('localhost', port), RequestHandler)
     print('='*60)
     print('E-fy Single Email Verification Server')
