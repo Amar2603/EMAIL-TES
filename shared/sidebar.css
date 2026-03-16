@@ -1,0 +1,74 @@
+.sidebar{
+  width:220px;
+  height:100%;
+  background:#f7f8f9;
+  border-top-right-radius:36px;
+  border-bottom-right-radius:36px;
+  padding:24px 14px;
+  position:absolute;
+  left:0;
+  top:0;
+  z-index:2;
+  box-shadow:2px 0 8px rgba(10,36,48,0.08);
+}
+
+.logo{
+  font-size:36px;
+  font-style:italic;
+  font-weight:700;
+  color:#156d83;
+  margin:8px 0 28px 18px;
+}
+
+.menu{display:flex;flex-direction:column;gap:12px;}
+
+.menu-item{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:11px 12px;
+  border-radius:11px;
+  color:#264353;
+  font-size:14px;
+  cursor:pointer;
+}
+
+.menu-item.active{
+  background:linear-gradient(90deg,#25adc1,#0f6b82);
+  color:#fff;
+}
+
+.menu-icon{width:14px;text-align:center;font-size:12px;}
+
+.credit-panel{
+  position:absolute;
+  left:12px;
+  right:12px;
+  bottom:24px;
+}
+
+.credit-pill{
+  height:28px;
+  border-radius:16px;
+  background:linear-gradient(90deg,#8ed4dd 0%,#d7ecf0 58%,#8dcdd7 100%);
+  border:1px solid #6bb8c4;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 10px;
+  font-size:14px;
+  font-weight:600;
+  color:#214f61;
+}
+
+.buy-credits{
+  margin-top:10px;
+  width:100%;
+  height:28px;
+  border:none;
+  border-radius:16px;
+  background:linear-gradient(90deg,#2ab2bf,#0b4f67);
+  color:#fff;
+  font-size:12px;
+  cursor:pointer;
+}

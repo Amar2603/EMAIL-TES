@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-fy Dashboard</title>
+<link rel="stylesheet" href="/shared/sidebar.css">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
+
+body{
+  background:#e8eaec;
+  width:100vw;
+  height:100vh;
+  overflow-y:auto;
+  overflow-x:hidden;
+}
+
+.app-shell{
+  width:100vw;
+  min-height:100vh;
+  background:#f4f6f7;
+  position:relative;
+  overflow:visible;
+}
+
+.bg-top{
+  position:absolute;
+  left:220px;
+  top:0;
+  width:860px;
+  height:220px;
+  background:radial-gradient(125% 120% at 8% 18%,#37c0cc 0%,#0f5d72 52%,#0b455d 100%);
+  clip-path:path('M 0 0 L 860 0 L 860 20 C 680 56, 560 84, 445 140 C 372 176, 295 218, 200 220 L 0 220 Z');
+}
+
+.bg-bottom{
+  position:absolute;
+  right:0;
+  bottom:0;
+  width:600px;
+  height:300px;
+  background:radial-gradient(130% 130% at 75% 82%,#3ec1cb 0%,#105d72 55%,#0a4157 100%);
+  clip-path:path('M 0 300 L 600 300 L 600 0 C 540 48, 470 78, 404 82 C 320 86, 258 102, 204 148 C 152 192, 124 250, 74 274 C 50 286, 30 292, 0 300 Z');
+}
+
+.main{
+  position:absolute;
+  left:220px;
+  right:0;
+  top:0;
+  bottom:0;
+  padding:18px 26px 20px;
+  z-index:2;
+  overflow-y:auto;
+  overflow-x:hidden;
+}
+
+.topbar{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  margin-bottom:12px;
+  position:relative;
+}
+
+.user-chip{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#1b3341;
+  font-size:12px;
+  cursor:pointer;
+  user-select:none;
+}
+
+.avatar{
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#858585,#bdbdbd);
+  background-size:cover;
+  background-position:center;
+}
+
+
+.user-menu{
+  position:absolute;
+  right:0;
+  top:30px;
+  min-width:165px;
+  background:#ffffff;
+  border:1px solid #d5dde2;
+  border-radius:10px;
+  box-shadow:0 8px 18px rgba(6,35,45,0.16);
+  padding:6px;
+  display:none;
+  z-index:20;
+}
+
+.user-menu.open{
+  display:block;
+}
+
+.user-menu button{
+  width:100%;
+  border:none;
+  background:#fff;
+  color:#173241;
+  text-align:left;
+  padding:9px 10px;
+  border-radius:7px;
+  font-size:12px;
+  cursor:pointer;
+}
+
+.user-menu button:hover{
+  background:#eef5f7;
+}
+
+.settings-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(7,24,34,0.28);
+  backdrop-filter:blur(6px);
+  display:none;
+  align-items:flex-start;
+  justify-content:center;
+  padding:34px 20px;
+  z-index:40;
+}
+
+.settings-overlay.open{display:flex;}
+
+.settings-panel{
+  width:min(980px,100%);
+  min-height:620px;
+  border-radius:30px;
+  background:#f8f8f8;
+  overflow:hidden;
+  position:relative;
+  box-shadow:0 20px 50px rgba(6,35,45,0.24);
+}
+
+.settings-panel::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(130% 90% at 8% 8%, #35bfcb 0%, #0d6177 48%, #094558 100%);
+  clip-path:path('M 0 0 L 980 0 L 980 120 C 860 130, 730 110, 640 60 C 560 18, 460 20, 380 84 C 312 138, 236 186, 138 190 C 84 192, 44 204, 0 254 L 0 0 Z');
+}
+
+.settings-panel::after{
+  content:'';
+  position:absolute;
+  right:0;
+  bottom:0;
+  width:68%;
+  height:46%;
+  background:radial-gradient(125% 125% at 75% 82%, #38c0cb 0%, #115f74 54%, #0a4559 100%);
+  clip-path:path('M 0 250 C 80 214, 146 206, 220 198 C 302 190, 348 144, 404 96 C 450 56, 512 18, 664 20 L 664 250 Z');
+  opacity:0.98;
+}
+
+.settings-panel-inner{
+  position:relative;
+  z-index:1;
+  padding:20px 36px 34px;
+}
+
+.settings-topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:22px;
+}
+
+.settings-profile{display:flex;align-items:center;gap:10px;color:#173241;font-size:12px;}
+.settings-profile-meta{display:flex;flex-direction:column;gap:2px;}
+.settings-profile-meta strong{font-size:12px;font-weight:600;}
+
+.settings-close{
+  border:none;
+  background:#ffffff;
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  color:#173241;
+  font-size:18px;
+  cursor:pointer;
+  box-shadow:0 8px 20px rgba(5,36,47,0.16);
+}
+
+.settings-tabs{width:min(610px,100%);margin:0 auto 20px;}
+
+.settings-tablist{
+  display:flex;
+  gap:6px;
+  background:#dfdfe1;
+  padding:6px;
+  border-radius:24px;
+}
+
+.settings-tab{
+  flex:1;
+  border:none;
+  background:transparent;
+  border-radius:20px;
+  padding:8px 6px;
+  font-size:10px;
+  color:#172631;
+  cursor:pointer;
+}
+
+.settings-tab.active{
+  background:linear-gradient(90deg,#34b9c8,#0f6f86);
+  color:#fff;
+  box-shadow:0 4px 10px rgba(11,88,105,0.24);
+}
+
+.settings-toolbar{display:flex;justify-content:flex-end;gap:10px;margin-bottom:14px;}
+.settings-link-btn{border:none;background:transparent;color:#2897a6;font-size:14px;cursor:pointer;}
+
+.settings-solid-btn{
+  border:none;
+  background:linear-gradient(90deg,#2eb9c8,#0a5169);
+  color:#fff;
+  padding:10px 18px;
+  border-radius:999px;
+  font-size:12px;
+  cursor:pointer;
+  box-shadow:0 8px 16px rgba(10,81,105,0.22);
+}
+
+.settings-section{display:none;}
+.settings-section.active{display:block;}
+
+.settings-card{
+  background:#fff;
+  border-radius:16px;
+  padding:22px;
+  box-shadow:0 6px 16px rgba(15,30,38,0.12);
+  margin-bottom:16px;
+}
+
+.account-card,.api-key-card{display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.account-card-main{display:flex;align-items:center;gap:14px;}
+
+.settings-avatar{
+  width:46px;
+  height:46px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#6f8592,#c7d3d8);
+  background-size:cover;
+  background-position:center;
+  flex:0 0 auto;
+}
+
+.settings-avatar.initials{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-weight:700;
+  font-size:20px;
+  background:linear-gradient(135deg,#39b8c7,#0f677e);
+}
+
+.account-card h3{font-size:16px;color:#1b2b35;margin-bottom:4px;}
+.muted{color:#7b8b93;font-size:12px;}
+.settings-inline-action{border:none;background:transparent;color:#2897a6;font-size:13px;cursor:pointer;}
+.settings-heading{font-size:18px;color:#1d8ea0;font-weight:700;text-align:right;margin:8px 0 14px;}
+.api-key-meta{display:flex;flex-direction:column;gap:8px;}
+.api-key-actions{display:flex;gap:12px;font-size:13px;}
+
+.api-copy-btn{
+  border:none;
+  width:40px;
+  height:40px;
+  border-radius:10px;
+  background:linear-gradient(90deg,#31b9c8,#0d5d74);
+  color:#fff;
+  cursor:pointer;
+  font-size:18px;
+}
+
+.restriction-row,.notification-row,.timezone-row{display:grid;gap:10px;}
+.restriction-row{grid-template-columns:1fr auto;align-items:end;}
+
+.toggle-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:8px 0;
+}
+
+.toggle{
+  width:30px;
+  height:18px;
+  border-radius:999px;
+  background:#d7dde1;
+  position:relative;
+}
+
+.toggle.on{background:#49c0c9;}
+
+.toggle::after{
+  content:'';
+  position:absolute;
+  top:3px;
+  left:3px;
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  background:#fff;
+}
+
+.toggle.on::after{left:15px;}
+
+.auth-layout{
+  display:grid;
+  grid-template-columns:1.2fr 1fr auto 1fr;
+  gap:16px;
+  align-items:start;
+}
+
+.qr-box,.code-box{
+  border:1px solid #d6dde2;
+  border-radius:10px;
+  background:#fafafa;
+  min-height:108px;
+}
+
+.qr-box{
+  display:grid;
+  place-items:center;
+  background:
+    linear-gradient(90deg,#000 10px,transparent 10px) 0 0/20px 20px,
+    linear-gradient(#000 10px,transparent 10px) 0 0/20px 20px,
+    #fff;
+}
+
+.code-box{
+  display:grid;
+  place-items:center;
+  color:#75848d;
+  font-size:13px;
+  letter-spacing:1px;
+}
+
+.subuser-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(14,32,40,0.34);
+  backdrop-filter:blur(6px);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:50;
+  padding:20px;
+}
+
+.subuser-modal.open{display:flex;}
+
+.subuser-dialog{
+  width:min(384px,calc(100% - 32px));
+  background:#f6f6f6;
+  border-radius:14px;
+  padding:22px 22px 16px;
+  box-shadow:0 24px 44px rgba(6,35,45,0.22);
+  position:relative;
+}
+
+.subuser-close{
+  position:absolute;
+  top:10px;
+  right:12px;
+  border:none;
+  background:transparent;
+  font-size:16px;
+  line-height:1;
+  cursor:pointer;
+  color:#4d4d4d;
+}
+
+.subuser-dialog h3{
+  text-align:center;
+  color:#2a9cab;
+  font-size:17px;
+  margin-bottom:14px;
+  font-weight:700;
+}
+
+.subuser-form{display:grid;gap:9px;}
+.subuser-field-label{display:block;margin-bottom:4px;color:#1f2d35;font-size:10px;font-weight:600;}
+.subuser-form input[type="text"],.subuser-form input[type="email"]{background:#fff;border:1px solid #9cd1d7;border-radius:3px;padding:9px 10px;font-size:11px;}
+.subuser-form input[type="text"]::placeholder,.subuser-form input[type="email"]::placeholder{color:#a0aab0;}
+.subuser-form input[type="radio"]{accent-color:#2a9cab;}
+.radio-row{display:flex;gap:16px;font-size:10px;color:#30444f;align-items:center;}
+.radio-row label{display:flex;align-items:center;gap:6px;}
+.subuser-submit-btn{width:100%;border:none;background:linear-gradient(90deg,#2daec0,#094f67);color:#fff;padding:9px 16px;border-radius:999px;font-size:13px;cursor:pointer;margin-top:2px;}
+.section-footer{display:flex;justify-content:flex-end;margin-top:10px;}
+.others-panel{max-width:430px;margin:0 auto;}
+.timezone-hero{display:flex;align-items:flex-start;justify-content:flex-start;gap:10px;margin:2px 0 10px;}
+.timezone-hero-icon{width:26px;height:26px;border:2px solid #29a7b6;border-radius:50%;position:relative;flex:0 0 auto;margin-top:1px;}
+.timezone-hero-icon::before{content:'';position:absolute;left:11px;top:4px;width:2px;height:8px;background:#29a7b6;border-radius:999px;}
+.timezone-hero-icon::after{content:'';position:absolute;left:11px;top:11px;width:6px;height:2px;background:#29a7b6;border-radius:999px;}
+.timezone-hero-copy h3{color:#1ca0b1;font-size:16px;line-height:1.1;font-weight:700;margin-bottom:2px;}
+.timezone-hero-copy p{color:#4c6470;font-size:10px;}
+.timezone-card{background:#fff;border-radius:14px;padding:14px 16px 42px;box-shadow:0 8px 18px rgba(15,30,38,0.10);position:relative;min-height:110px;}
+.timezone-datetime{font-size:14px;color:#2b9daf;font-weight:600;margin-bottom:6px;}
+.timezone-label{font-size:11px;color:#27343c;margin-bottom:6px;}
+.timezone-select{width:106px;height:22px;padding:2px 22px 2px 8px;border:none;border-radius:3px;background:#efefef;color:#8a939a;font-size:10px;appearance:none;background-image:linear-gradient(45deg,transparent 50%,#8f98a0 50%),linear-gradient(135deg,#8f98a0 50%,transparent 50%);background-position:calc(100% - 13px) 9px,calc(100% - 9px) 9px;background-size:4px 4px,4px 4px;background-repeat:no-repeat;}
+.timezone-card .section-footer{position:absolute;right:16px;bottom:12px;margin-top:0;}
+.timezone-card .settings-solid-btn{width:100px;padding:6px 14px;font-size:9px;line-height:1;box-shadow:none;}
+
+.card{
+  width:100%;
+  margin:18px 0 0;
+  background:transparent;
+  border-radius:0;
+  box-shadow:none;
+  border:none;
+  padding:0;
+}
+
+.card{
+  width:100%;
+  margin:18px 0 0;
+  background:transparent;
+  border-radius:0;
+  box-shadow:none;
+  border:none;
+  padding:0;
+}
+
+.tabs{
+  display:flex;
+  gap:8px;
+  background:#e4e5e7;
+  padding:7px;
+  border-radius:24px;
+  margin-bottom:12px;
+}
+
+.tab{
+  flex:1;
+  border:none;
+  background:transparent;
+  text-align:center;
+  padding:8px;
+  border-radius:20px;
+  font-size:12px;
+  cursor:pointer;
+  color:#172631;
+}
+
+.tab.active{
+  background:linear-gradient(90deg,#34b9c8,#0f6f86);
+  color:#fff;
+  box-shadow:0 4px 10px rgba(11,88,105,0.26);
+}
+
+.content-shell{
+  background:#e8e8e9;
+  border-radius:12px;
+  padding:16px;
+  min-height:190px;
+}
+
+.section{display:none;}
+.section.active{display:block;}
+
+.section h2{
+  font-size:16px;
+  font-weight:600;
+  text-align:center;
+  color:#35434c;
+  margin-bottom:14px;
+}
+
+#single.section.active{
+  text-align:center;
+}
+
+input, textarea{
+  width:100%;
+  border:1px solid #d4d8dd;
+  border-radius:8px;
+  padding:10px 12px;
+  font-size:13px;
+  background:#f7f7f8;
+}
+
+#single input{
+  max-width:320px;
+  margin:0 auto;
+  display:block;
+}
+
+.verify-btn{
+  margin-top:14px;
+  border:1px solid #58aeba;
+  border-radius:8px;
+  background:#eef5f6;
+  color:#2f8f9d;
+  padding:6px 24px;
+  font-size:12px;
+  cursor:pointer;
+  min-width:130px;
+  box-shadow:0 3px 6px rgba(40,116,126,0.2);
+}
+
+.list-name-input{margin-bottom:10px;}
+textarea{min-height:88px;resize:vertical;}
+
+.upload-box{
+  border:2px dashed #b9c7cd;
+  border-radius:12px;
+  padding:40px 20px;
+  text-align:center;
+  color:#596770;
+  background:#f3f4f5;
+  font-size:14px;
+}
+
+.upload-box button{
+  margin-top:14px;
+  border:1px solid #58aeba;
+  border-radius:8px;
+  background:#eef5f6;
+  color:#2f8f9d;
+  padding:8px 18px;
+  cursor:pointer;
+}
+
+.result{
+  margin-top:12px;
+  padding:10px;
+  border-radius:8px;
+  background:#f7f8f9;
+  font-size:12px;
+}
+
+.result-table{
+  margin-top:12px;
+  width:100%;
+  border-collapse:collapse;
+  font-size:12px;
+}
+
+.result-table th,.result-table td{
+  padding:7px;
+  text-align:left;
+  border-bottom:1px solid #d8dfe4;
+}
+
+.result-table th{background:#2aa7ad;color:#fff;}
+.result-table .valid{color:green;}
+.result-table .bounce{color:red;}
+.result-table .unknown{color:orange;}
+
+.list-results-stack{display:flex;flex-direction:column;gap:10px;}
+.list-pagination{
+  margin-top:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+}
+.pagination-btn{
+  border:1px solid #cfd8dc;
+  background:#fff;
+  color:#10324a;
+  border-radius:8px;
+  padding:6px 12px;
+  cursor:pointer;
+  font-size:14px;
+  line-height:1.1;
+}
+.pagination-btn:hover{background:#f3f7f8;}
+.pagination-btn[disabled]{opacity:0.45;cursor:not-allowed;}
+.page-indicator{
+  font-size:22px;
+  font-weight:600;
+  color:#445a69;
+}
+.verify-list-card{
+  background:#fff;
+  border-radius:12px;
+  padding:10px;
+  display:grid;
+  grid-template-columns:160px 80px 1fr 110px;
+  align-items:center;
+  gap:8px;
+}
+
+.list-meta{display:flex;align-items:center;gap:8px;}
+.mail-icon{width:34px;height:34px;border-radius:8px;background:#dce9ee;display:flex;align-items:center;justify-content:center;color:#0b6a79;font-size:11px;}
+.list-name{font-size:15px;font-weight:700;color:#10324a;line-height:1.1;}
+.list-count{color:#5b6d80;font-size:12px;}
+.donut{width:56px;height:56px;border-radius:50%;}
+.legend{display:flex;flex-direction:column;gap:3px;font-size:12px;color:#10324a;}
+.legend .row{display:flex;align-items:center;gap:6px;}
+.dot{width:7px;height:7px;border-radius:50%;}
+.dot.valid{background:#18b37f;}
+.dot.invalid{background:#ef4444;}
+.dot.risky{background:#f59e0b;}
+
+.card-actions{display:flex;flex-direction:column;gap:6px;}
+.action-btn{border:1px solid #cfd8dc;background:#fff;color:#10324a;border-radius:6px;padding:4px 6px;cursor:pointer;font-size:10px;}
+.action-btn:hover{background:#f3f7f8;}
+.action-btn[disabled]{opacity:0.45;cursor:not-allowed;}
+
+
+@media (max-width:1100px){
+  .card{margin-top:16px;}
+  .verify-list-card{grid-template-columns:1fr;}
+}
+</style>
+</head>
+
+<body>
+<div class="app-shell">
+  <div class="bg-top"></div>
+  <div class="bg-bottom"></div>
+
+  <div id="sidebarMount"></div>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="user-chip" id="userChip">
+        <div class="avatar"></div>
+        <span id="loggedInUser">User</span>
+        <span>v</span>
+      </div>
+      <div class="user-menu" id="userMenu">
+        <button id="uploadProfileBtn" type="button">Update Profile</button>
+        <button id="openSettingsBtn" type="button" onclick="window.location.href='user.html?' + getUserParams().toString();">User</button>
+        <button id="logoutBtn" type="button">Logout</button>
+      </div>
+      <input type="file" id="profileInput" accept="image/*" hidden>
+    </div>
+
+    <div class="settings-overlay" id="settingsOverlay">
+      <div class="settings-panel">
+        <div class="settings-panel-inner">
+          <div class="settings-topbar">
+            <div class="settings-profile">
+              <div class="settings-avatar" id="settingsTopAvatar"></div>
+              <div class="settings-profile-meta">
+                <strong id="settingsTopName">User</strong>
+                <span class="muted" id="settingsTopEmail">user@example.com</span>
+              </div>
+            </div>
+            <button class="settings-close" id="closeSettingsBtn" type="button">&times;</button>
+          </div>
+
+          <div class="settings-tabs">
+            <div class="settings-tablist">
+              <button class="settings-tab active" type="button" data-settings-tab="accounts">Accounts</button>
+              <button class="settings-tab" type="button" data-settings-tab="apiKeys">API Keys</button>
+              <button class="settings-tab" type="button" data-settings-tab="twoFactor">2 Factor Auth</button>
+              <button class="settings-tab" type="button" data-settings-tab="notifications">Notifications</button>
+              <button class="settings-tab" type="button" data-settings-tab="others">Others</button>
+            </div>
+          </div>
+
+          <div class="settings-toolbar">
+            <button class="settings-link-btn" id="settingsUploadBtn" type="button">Upload Profile</button>
+            <button class="settings-link-btn" id="addSubuserBtn" type="button">+ Add New User</button>
+            <button class="settings-link-btn" id="settingsLogoutBtn" type="button">Logout</button>
+          </div>
+
+          <section class="settings-section active" id="settings-accounts">
+            <div class="settings-card account-card">
+              <div class="account-card-main">
+                <div class="settings-avatar" id="settingsMainAvatar"></div>
+                <div>
+                  <h3 id="settingsAccountName">User</h3>
+                  <div class="muted" id="settingsAccountEmail">user@example.com</div>
+                </div>
+              </div>
+              <button class="settings-inline-action" type="button">Edit Account</button>
+            </div>
+
+            <div id="subuserList"></div>
+
+          </section>
+
+          <section class="settings-section" id="settings-apiKeys">
+            <div class="settings-heading">Your API Key</div>
+            <div class="settings-card api-key-card">
+              <div class="api-key-meta">
+                <div>8D********************AGO</div>
+                <div class="api-key-actions">
+                  <button class="settings-inline-action" type="button">Edit</button>
+                  <button class="settings-inline-action" type="button" style="color:#d65d74;">Delete</button>
+                </div>
+              </div>
+              <button class="api-copy-btn" type="button">Copy</button>
+            </div>
+            <div class="settings-card api-key-card">
+              <div class="api-key-meta">
+                <div>2S********************hfQ</div>
+                <div class="api-key-actions">
+                  <button class="settings-inline-action" type="button">Edit</button>
+                  <button class="settings-inline-action" type="button" style="color:#d65d74;">Delete</button>
+                </div>
+              </div>
+              <button class="api-copy-btn" type="button">Copy</button>
+            </div>
+            <div class="settings-card api-key-card">
+              <div class="api-key-meta">
+                <div>6E********************rUR</div>
+                <div class="api-key-actions">
+                  <button class="settings-inline-action" type="button">Edit</button>
+                  <button class="settings-inline-action" type="button" style="color:#d65d74;">Delete</button>
+                </div>
+              </div>
+              <button class="api-copy-btn" type="button">Copy</button>
+            </div>
+            <div class="settings-card">
+              <h3 style="margin-bottom:14px;">API Restrictions</h3>
+              <div class="muted" style="margin-bottom:8px;">Restriction Type:</div>
+              <div class="restriction-row">
+                <input type="text" placeholder="Add IP Address">
+                <button class="settings-solid-btn" type="button">Add New IP Address</button>
+              </div>
+            </div>
+            <div class="section-footer">
+              <button class="settings-solid-btn" type="button">Save Changes</button>
+            </div>
+          </section>
+
+          <section class="settings-section" id="settings-twoFactor">
+            <div class="settings-card">
+              <div class="toggle-row" style="padding-top:0;">
+                <div>
+                  <h3 style="margin-bottom:4px;">Google two factor authentication</h3>
+                  <div class="muted">Higher security level</div>
+                </div>
+                <div class="toggle on"></div>
+              </div>
+              <div class="auth-layout" style="margin-top:18px;">
+                <div>
+                  <h3 style="font-size:14px;margin-bottom:8px;">1. Install Google authentication</h3>
+                  <div class="muted">Use Google Authenticator or a compatible app.</div>
+                </div>
+                <div>
+                  <h3 style="font-size:14px;margin-bottom:8px;">2. Scan the QR code</h3>
+                  <div class="qr-box"></div>
+                </div>
+                <div style="align-self:center;color:#7d8a92;">OR</div>
+                <div>
+                  <div class="muted" style="margin-bottom:8px;">Enter this code in your authentication app</div>
+                  <div class="code-box">LGJRYPJZUQ83</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="settings-section" id="settings-notifications">
+            <div class="settings-heading">Notification</div>
+            <div class="settings-card">
+              <div class="notification-row">
+                <div>
+                  <div style="margin-bottom:6px;">Webhook Notifications</div>
+                  <input type="text" placeholder="https://mydomain.com/webhook">
+                </div>
+                <div class="toggle-row">
+                  <span>No Credit Notification with Webhook</span>
+                  <div class="toggle on"></div>
+                </div>
+                <div class="toggle-row">
+                  <span>Low Credit Notification with Webhook</span>
+                  <div class="toggle on"></div>
+                </div>
+                <div>
+                  <div style="margin-bottom:6px;">Amount of low credit when notification send</div>
+                  <input type="text" placeholder="Add Amount">
+                </div>
+                <div class="toggle-row">
+                  <span>File Ready Notification with Webhook</span>
+                  <div class="toggle on"></div>
+                </div>
+                <div class="toggle-row">
+                  <span>File Delete Notification with Webhook</span>
+                  <div class="toggle on"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="settings-section" id="settings-others">
+            <div class="others-panel">
+              <div class="timezone-hero">
+                <div class="timezone-hero-icon"></div>
+                <div class="timezone-hero-copy">
+                  <h3>Time Zone Setting</h3>
+                  <p>Based On Your Setting Current Time Is: <span id="timezoneNow"></span></p>
+                </div>
+              </div>
+              <div class="timezone-card">
+                <div class="timezone-datetime" id="timezoneDateTime"></div>
+                <div class="timezone-label">Your Time-zone:</div>
+                <select class="timezone-select">
+                  <option>Time Zone</option>
+                  <option>Asia/Kolkata</option>
+                  <option>UTC</option>
+                  <option>America/New_York</option>
+                </select>
+                <div class="section-footer">
+                  <button class="settings-solid-btn" type="button">Save Changes</button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <div class="subuser-modal" id="subuserModal">
+      <div class="subuser-dialog">
+        <button class="subuser-close" id="closeSubuserModalBtn" type="button">&times;</button>
+        <h3>Add Subuser</h3>
+        <div class="subuser-form">
+          <div>
+            <label class="subuser-field-label" for="subuserFirstName">First Name:</label>
+            <input type="text" id="subuserFirstName" placeholder="Shravani">
+          </div>
+          <div>
+            <label class="subuser-field-label" for="subuserLastName">Last Name:</label>
+            <input type="text" id="subuserLastName" placeholder="Achari">
+          </div>
+          <div>
+            <label class="subuser-field-label" for="subuserEmailInput">Email:</label>
+            <input type="email" id="subuserEmailInput" placeholder="shravaniachari13@gmail.com">
+          </div>
+          <div>
+            <label class="subuser-field-label">Account Type:</label>
+            <div class="radio-row">
+              <label><input type="radio" name="subuserType" value="isolated" checked> Isolated</label>
+              <label><input type="radio" name="subuserType" value="shared"> Shared</label>
+            </div>
+          </div>
+          <button class="subuser-submit-btn" id="createSubuserBtn" type="button">Add New user</button>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="card">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('single',this)">Single Email</button>
+        <button class="tab" onclick="switchTab('list',this)">Paste Email List</button>
+        <button class="tab" onclick="switchTab('file',this)">File Upload</button>
+        <button class="tab" onclick="switchTab('integration',this)">Integration</button>
+        <button class="tab" onclick="switchTab('api',this)">API</button>
+      </div>
+
+      <div class="content-shell">
+        <div id="single" class="section active">
+          <h2>Add Email</h2>
+          <input type="email" id="singleEmail" placeholder="example@domain.com">
+          <button class="verify-btn" onclick="verifySingle()">Verify</button>
+          <div id="singleResult" class="result"></div>
+        </div>
+
+        <div id="list" class="section">
+          <h2>Paste Email List</h2>
+          <input type="text" id="listName" class="list-name-input" placeholder="Enter list name (example: January Leads)">
+          <textarea id="listEmails" rows="6" placeholder="Enter emails separated by comma or new line"></textarea>
+          <button class="verify-btn" onclick="verifyList()">Verify List</button>
+          <div id="listResult" class="result"></div>
+        </div>
+
+        <div id="file" class="section">
+          <div class="upload-box">
+            Drop your file here (.txt / .csv / .xlsx)
+            <br>
+            <button onclick="document.getElementById('fileInput').click()">Select File</button>
+            <input type="file" id="fileInput" id="fileInput" accept=".csv,.txt,.xlsx" hidden onchange="handleFileSelected()">
+            <br><br>
+            <button id="fileVerifyBtn" class="verify-btn" style="display:none;" onclick="verifyFile()">Verify File</button>
+          </div>
+          <div id="fileResult" class="result"></div>
+        </div>
+
+        <div id="integration" class="section">
+          <h2>Integration</h2>
+          <p>Connect using SMTP or API integration.</p>
+        </div>
+
+        <div id="api" class="section">
+          <h2>API</h2>
+          <p>POST /verify-email</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/shared/sidebar.js"></script>
+<script>
+let loggedInEmail = '';
+let availableCredits = 100;
+const CREDIT_COST_SINGLE = 1;
+const CREDIT_COST_LIST = 10;
+const CREDIT_COST_FILE = 20;
+
+function getUserParams(){
+  const params = new URLSearchParams();
+  const username = document.getElementById('loggedInUser').textContent || sessionStorage.getItem('username') || 'User';
+  params.set('username', username);
+  params.set('email', loggedInEmail || '');
+  return params;
+}
+
+function mountPageSidebar(){
+  if(typeof mountSharedSidebar !== 'function'){
+    return;
+  }
+  mountSharedSidebar({
+    mountId: 'sidebarMount',
+    active: 'email_verification',
+    credits: availableCredits,
+    getParams: getUserParams,
+    onBuyCredits: function(){
+      window.location.href = '/billing/index.html?' + getUserParams().toString();
+    }
+  });
+}
+
+function setCreditsDisplay(value){
+  availableCredits = Math.max(0, Number(value) || 0);
+  const el = document.getElementById('creditsValue');
+  if(el){
+    el.textContent = String(availableCredits);
+  }
+
+  const currentUserRaw = localStorage.getItem('currentUser');
+  if(currentUserRaw){
+    try{
+      const currentUser = JSON.parse(currentUserRaw);
+      currentUser.credits = availableCredits;
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    }catch(e){}
+  }
+}
+
+function ensureCreditsFor(cost){
+  if(availableCredits < cost){
+    alert('Insufficient credits. Please buy credits first.');
+    return false;
+  }
+  return true;
+}
+
+async function fetchCredits(){
+  if(!loggedInEmail){
+    return;
+  }
+  try{
+    const response = await fetch('/credits?email=' + encodeURIComponent(loggedInEmail));
+    const data = await response.json();
+    if(response.ok && data.success){
+      setCreditsDisplay(data.credits);
+    }
+  }catch(e){}
+}
+
+async function spendCredits(amount){
+  const response = await fetch('/credits/spend', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: loggedInEmail,
+      amount: amount
+    })
+  });
+  const data = await response.json();
+  if(!response.ok || !data.success){
+    throw new Error((data && data.message) ? data.message : 'Unable to deduct credits');
+  }
+  setCreditsDisplay(data.credits);
+}
+
+function setLoggedInUser(){
+  const urlParams = new URLSearchParams(window.location.search);
+  let username = urlParams.get('username');
+  let email = urlParams.get('email');
+
+  if(!username){
+    username = sessionStorage.getItem('username');
+  }
+
+  const currentUser = localStorage.getItem('currentUser');
+  if(currentUser){
+    try{
+      const parsedUser = JSON.parse(currentUser);
+      if(!username){
+        username = parsedUser.fullname;
+      }
+      if(!email){
+        email = parsedUser.email;
+      }
+    }catch(e){
+      username = username || null;
+      email = email || null;
+    }
+  }
+
+  document.getElementById('loggedInUser').textContent = username || 'User';
+  loggedInEmail = (email || '').toLowerCase();
+  if(currentUser){
+    try{
+      const parsedUser = JSON.parse(currentUser);
+      if(typeof parsedUser.credits !== 'undefined'){
+        setCreditsDisplay(parsedUser.credits);
+      }else{
+        setCreditsDisplay(100);
+      }
+    }catch(e){
+      setCreditsDisplay(100);
+    }
+  }else{
+    setCreditsDisplay(100);
+  }
+  loadProfile();
+  fetchCredits();
+}
+
+async function loadProfile(){
+  if(!loggedInEmail){
+    return;
+  }
+
+  try{
+    const response = await fetch('/profile?email=' + encodeURIComponent(loggedInEmail));
+    const data = await response.json();
+    if(!response.ok || !data.success){
+      return;
+    }
+
+    if(data.fullname){
+      document.getElementById('loggedInUser').textContent = data.fullname;
+      sessionStorage.setItem('username', data.fullname);
+      const currentUserRaw = localStorage.getItem('currentUser');
+      if(currentUserRaw){
+        try{
+          const currentUser = JSON.parse(currentUserRaw);
+          currentUser.fullname = data.fullname;
+          localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        }catch(e){}
+      }
+    }
+    if(typeof data.credits !== 'undefined'){
+      setCreditsDisplay(data.credits);
+    }
+
+    if(data.profile_image_url){
+      const avatarEl = document.querySelector('.avatar');
+      avatarEl.style.backgroundImage = 'url(' + data.profile_image_url + '?t=' + Date.now() + ')';
+      avatarEl.style.backgroundColor = 'transparent';
+    }
+  }catch(e){}
+}
+
+function setupUserMenu(){
+  const userChip = document.getElementById('userChip');
+  const userMenu = document.getElementById('userMenu');
+  const uploadBtn = document.getElementById('uploadProfileBtn');
+  const openSettingsBtn = document.getElementById('openSettingsBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const profileInput = document.getElementById('profileInput');
+
+  userChip.addEventListener('click', function(event){
+    event.stopPropagation();
+    userMenu.classList.toggle('open');
+  });
+
+  document.addEventListener('click', function(event){
+    if(!userMenu.contains(event.target) && !userChip.contains(event.target)){
+      userMenu.classList.remove('open');
+    }
+  });
+
+  uploadBtn.addEventListener('click', function(){
+    userMenu.classList.remove('open');
+    if(!loggedInEmail){
+      alert('Unable to identify logged-in user.');
+      return;
+    }
+    profileInput.click();
+  });
+
+  profileInput.addEventListener('change', async function(){
+    const file = profileInput.files[0];
+    if(!file){
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('email', loggedInEmail);
+    formData.append('profile', file);
+
+    try{
+      const response = await fetch('/upload-profile', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
+      if(!response.ok || !data.success){
+        alert(data.message || 'Failed to upload profile image');
+        return;
+      }
+      await loadProfile();
+      alert('Profile image updated.');
+    }catch(e){
+      alert('Cannot connect to server.');
+    } finally {
+      profileInput.value = '';
+    }
+  });
+
+  logoutBtn.addEventListener('click', function(){
+    userMenu.classList.remove('open');
+    localStorage.removeItem('currentUser');
+    sessionStorage.removeItem('username');
+    window.location.href = '/home/index.html';
+  });
+}
+
+function setupCreditActions(){
+  const buyBtn = document.getElementById('buyCreditsBtn');
+  if(!buyBtn){
+    return;
+  }
+
+  buyBtn.addEventListener('click', function(){
+    if(!loggedInEmail){
+      alert('Please login first.');
+      return;
+    }
+    window.location.href = '/billing/index.html?' + getUserParams().toString();
+  });
+}
+
+function switchTab(id,el){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+}
+
+function validateEmail(email){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+async function verifySingle(){
+  let email=document.getElementById('singleEmail').value.trim();
+  let result=document.getElementById('singleResult');
+  
+  if(!email){
+    result.innerHTML="Please enter an email address";
+    return;
+  }
+  
+  if(!validateEmail(email)){
+    result.innerHTML="Invalid email format";
+    return;
+  }
+  if(!loggedInEmail){
+    result.innerHTML="Please login to verify emails.";
+    return;
+  }
+  if(!ensureCreditsFor(CREDIT_COST_SINGLE)){
+    result.innerHTML="Insufficient credits. Buy credits to continue.";
+    return;
+  }
+  
+  result.innerHTML="Verifying...";
+
+  let data;
+  try{
+    const response=await fetch('http://localhost:8001/verify-email?email=' + encodeURIComponent(email));
+    data=await response.json();
+  }catch(error){
+    tryLocalVerification(email, result);
+    return;
+  }
+
+  try{
+    await spendCredits(CREDIT_COST_SINGLE);
+  }catch(error){
+    result.innerHTML = (error && error.message) ? error.message : 'Unable to deduct credits.';
+    return;
+  }
+
+  result.innerHTML='Status: ' + data.status + '<br>SMTP Code: ' + (data.smtp_code || 'N/A') + '<br>Message: ' + (data.message || '');
+}
+
+async function tryLocalVerification(email, result) {
+  result.innerHTML = "Trying local verification...";
+  result.innerHTML = "Server not running.<br><br>" +
+    "To use this tool, please:<br>" +
+    "1. Open terminal/command prompt<br>" +
+    "2. Navigate to the payment folder<br>" +
+    "3. Run: <code>python verify/server.py</code><br>" +
+    "4. Open <code>http://localhost:8001</code> in browser<br><br>" +
+    "<em>Or use the CLI tool:</em><br>" +
+    "<code>python verify/singleemail.py</code>";
+}
+
+let selectedUploadFile = null;
+let listRunCounter = 0;
+let verifiedLists = [];
+let nextListId = 1;
+let currentListPage = 1;
+const LIST_RETENTION_DAYS = 30;
+const LIST_RETENTION_MS = LIST_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+const LISTS_PER_PAGE = 6;
+const LIST_STORAGE_BASE_KEY = 'efy_verified_lists_v1';
+
+function getListStorageKey(){
+  const userKey = (loggedInEmail || 'guest').toLowerCase();
+  return LIST_STORAGE_BASE_KEY + ':' + userKey;
+}
+
+function formatDateTime(value){
+  const dt = new Date(value);
+  if(Number.isNaN(dt.getTime())){
+    return '';
+  }
+  return dt.toLocaleString();
+}
+
+function pruneExpiredListResults(){
+  const now = Date.now();
+  const before = verifiedLists.length;
+  verifiedLists = verifiedLists.filter(item => {
+    const createdAt = Number(item.created_at || 0);
+    const expiresAt = Number(item.expires_at || (createdAt ? createdAt + LIST_RETENTION_MS : 0));
+    if(!createdAt || !expiresAt){
+      return false;
+    }
+    return expiresAt > now;
+  });
+
+  if(verifiedLists.length !== before){
+    saveVerifiedLists();
+  }
+}
+
+function saveVerifiedLists(){
+  try{
+    localStorage.setItem(getListStorageKey(), JSON.stringify(verifiedLists));
+  }catch(e){}
+}
+
+function loadVerifiedLists(){
+  verifiedLists = [];
+  nextListId = 1;
+  currentListPage = 1;
+
+  let raw = '';
+  try{
+    raw = localStorage.getItem(getListStorageKey()) || '';
+  }catch(e){
+    raw = '';
+  }
+
+  if(raw){
+    try{
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed)){
+        verifiedLists = parsed;
+      }
+    }catch(e){
+      verifiedLists = [];
+    }
+  }
+
+  pruneExpiredListResults();
+
+  const resultDiv = document.getElementById('listResult');
+  if(!resultDiv){
+    return;
+  }
+
+  for(const record of verifiedLists){
+    if(typeof record.id === 'number' && record.id >= nextListId){
+      nextListId = record.id + 1;
+    }
+  }
+  renderListResults(1);
+}
+
+function getTotalListPages(){
+  return Math.max(1, Math.ceil(verifiedLists.length / LISTS_PER_PAGE));
+}
+
+function renderListResults(pageNumber){
+  const resultDiv = document.getElementById('listResult');
+  if(!resultDiv){
+    return;
+  }
+
+  if(verifiedLists.length === 0){
+    resultDiv.innerHTML = '';
+    currentListPage = 1;
+    return;
+  }
+
+  const totalPages = getTotalListPages();
+  currentListPage = Math.min(Math.max(1, pageNumber), totalPages);
+
+  const start = (currentListPage - 1) * LISTS_PER_PAGE;
+  const end = start + LISTS_PER_PAGE;
+  const pageItems = verifiedLists.slice(start, end);
+
+  let cardsHtml = '';
+  for(const record of pageItems){
+    cardsHtml += buildDonutCard(record.id, record.name, record.summary, record.total, record.expires_at);
+  }
+
+  const prevDisabled = currentListPage <= 1 ? 'disabled' : '';
+  const nextDisabled = currentListPage >= totalPages ? 'disabled' : '';
+
+  resultDiv.innerHTML =
+    '<div class="list-results-stack">' + cardsHtml + '</div>' +
+    '<div class="list-pagination">' +
+      '<button class="pagination-btn" onclick="goToPrevListPage()" ' + prevDisabled + '>Prev</button>' +
+      '<span class="page-indicator">Page ' + currentListPage + ' of ' + totalPages + '</span>' +
+      '<button class="pagination-btn" onclick="goToNextListPage()" ' + nextDisabled + '>Next</button>' +
+    '</div>';
+}
+
+function goToPrevListPage(){
+  renderListResults(currentListPage - 1);
+}
+
+function goToNextListPage(){
+  renderListResults(currentListPage + 1);
+}
+
+function getListSummary(results){
+  let valid = 0;
+  let invalid = 0;
+  let risky = 0;
+
+  for (const r of results) {
+    if (r.status === 'Valid') {
+      valid++;
+    } else if (r.status === 'Bounce' || r.status === 'Invalid Domain' || r.status === 'Invalid Format' || r.status === 'Disposable') {
+      invalid++;
+    } else {
+      risky++;
+    }
+  }
+
+  const total = results.length || 1;
+  return {
+    valid: valid,
+    invalid: invalid,
+    risky: risky,
+    valid_percent: Math.round((valid / total) * 100),
+    invalid_percent: Math.round((invalid / total) * 100),
+    risky_percent: Math.round((risky / total) * 100)
+  };
+}
+
+function escapeHtml(value){
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getAccuracyLabel(status){
+  if(status === 'Valid'){
+    return 'Valid';
+  }
+  if(status === 'Bounce' || status === 'Invalid Domain' || status === 'Invalid Format' || status === 'Disposable'){
+    return 'Not Valid';
+  }
+  return 'Risky';
+}
+
+function buildDonutCard(listId, listName, summary, total, expiresAt){
+  const fallbackName = 'List ' + String.fromCharCode(65 + (listRunCounter % 26));
+  const safeListName = escapeHtml(listName || fallbackName);
+  listRunCounter++;
+  const expiryText = expiresAt ? formatDateTime(expiresAt) : '';
+
+  const valid = summary.valid_percent || 0;
+  const invalid = summary.invalid_percent || 0;
+  const risky = summary.risky_percent || 0;
+  const validEnd = valid;
+  const invalidEnd = valid + invalid;
+  const donutStyle = 'background:conic-gradient(#18b37f 0 ' + validEnd + '%, #ef4444 ' + validEnd + '% ' + invalidEnd + '%, #f59e0b ' + invalidEnd + '% 100%);';
+
+  return '<div class="verify-list-card" id="list-card-' + listId + '">' +
+    '<div class="list-meta">' +
+      '<div class="mail-icon">Mail</div>' +
+      '<div>' +
+        '<div class="list-name">' + safeListName + '</div>' +
+        '<div class="list-count">' + total + ' Emails</div>' +
+        (expiryText ? '<div class="list-count">Expires: ' + escapeHtml(expiryText) + '</div>' : '') +
+      '</div>' +
+    '</div>' +
+    '<div class="donut" style="' + donutStyle + '"></div>' +
+    '<div class="legend">' +
+      '<div class="row"><span class="dot valid"></span>Valid ' + valid + '%</div>' +
+      '<div class="row"><span class="dot invalid"></span>Invalid ' + invalid + '%</div>' +
+      '<div class="row"><span class="dot risky"></span>Risky ' + risky + '%</div>' +
+    '</div>' +
+    '<div class="card-actions">' +
+      '<button class="action-btn" onclick="downloadListResults(' + listId + ')">Download</button>' +
+      '<button class="action-btn" onclick="deleteListCard(' + listId + ')">Delete</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function downloadListResults(listId){
+  const record = verifiedLists.find(item => item.id === listId);
+  if(!record){
+    alert('List data not found.');
+    return;
+  }
+
+  let rows = [];
+  rows.push(['#', 'Email', 'Status', 'Accuracy', 'Message']);
+
+  for(let i = 0; i < record.results.length; i++){
+    const r = record.results[i];
+    rows.push([
+      i + 1,
+      r.email || '',
+      r.status || '',
+      getAccuracyLabel(r.status),
+      r.message || ''
+    ]);
+  }
+
+  const summary = record.summary || getListSummary(record.results || []);
+  rows.push([]);
+  rows.push(['Summary', 'Valid ' + summary.valid_percent + '%', 'Invalid ' + summary.invalid_percent + '%', 'Risky ' + summary.risky_percent + '%', '']);
+
+  const csvContent = rows
+    .map(row => row.map(value => {
+      const str = String(value ?? '');
+      return '"' + str.replace(/"/g, '""') + '"';
+    }).join(','))
+    .join('\r\n');
+
+  const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const filename = (record.name || 'email_list').replace(/[^a-z0-9-_ ]/gi, '_') + '.csv';
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+}
+
+function deleteListCard(listId){
+  const shouldDelete = confirm('Are you sure you want to delete this saved result?');
+  if(!shouldDelete){
+    return;
+  }
+  verifiedLists = verifiedLists.filter(item => item.id !== listId);
+  saveVerifiedLists();
+  const totalPagesAfterDelete = getTotalListPages();
+  const targetPage = Math.min(currentListPage, totalPagesAfterDelete);
+  renderListResults(targetPage);
+}
+
+async function verifyList(){
+  let emailsText=document.getElementById('listEmails').value;
+  let emails=emailsText.split(/[\n,]+/).map(e=>e.trim()).filter(e=>e);
+  let resultDiv=document.getElementById('listResult');
+  let listNameInput=document.getElementById('listName');
+  const maxEmailsPerRun = 20;
+  
+  if(emails.length===0){
+    resultDiv.innerHTML='Error: Please enter at least one email';
+    return;
+  }
+
+  if(emails.length > maxEmailsPerRun){
+    alert('You can verify a maximum of 20 emails at once.');
+    resultDiv.innerHTML='Error: Only 20 or fewer emails are allowed per verification run.';
+    return;
+  }
+  
+  let validFormat=emails.filter(validateEmail).length;
+  if(validFormat===0){
+    resultDiv.innerHTML='Error: No valid email formats found';
+    return;
+  }
+  if(!loggedInEmail){
+    resultDiv.innerHTML='Error: Please login to verify emails';
+    return;
+  }
+  if(!ensureCreditsFor(CREDIT_COST_LIST)){
+    resultDiv.innerHTML='Error: Insufficient credits. Buy credits to continue.';
+    return;
+  }
+
+  let listName=(listNameInput ? listNameInput.value.trim() : '');
+  if(!listName){
+    listName=(prompt('Enter list name before verification:') || '').trim();
+  }
+  if(!listName){
+    resultDiv.innerHTML='Error: List name is required';
+    return;
+  }
+  
+  resultDiv.innerHTML='Verifying ' + emails.length + ' emails...';
+  
+  let data;
+  try{
+    const response=await fetch('http://localhost:8001/verify-list?emails=' + encodeURIComponent(emails.join(',')));
+    data=await response.json();
+  }catch(error){
+    resultDiv.innerHTML='Error: Cannot connect to bulk verification server. Run python verify/listemail.py and try again.';
+    return;
+  }
+
+  if(data.error){
+    resultDiv.innerHTML='Error: ' + data.error;
+    return;
+  }
+
+  try{
+    await spendCredits(CREDIT_COST_LIST);
+  }catch(error){
+    resultDiv.innerHTML='Error: ' + ((error && error.message) ? error.message : 'Unable to deduct credits.');
+    return;
+  }
+
+  try{
+    const summary = data.summary || getListSummary(data.results || []);
+
+    const record = {
+      id: nextListId++,
+      name: listName,
+      total: data.total || emails.length,
+      results: data.results || [],
+      summary: summary,
+      created_at: Date.now(),
+      expires_at: Date.now() + LIST_RETENTION_MS
+    };
+    verifiedLists.push(record);
+    saveVerifiedLists();
+    renderListResults(getTotalListPages());
+  }catch(error){
+    resultDiv.innerHTML='Error: Unable to render list results.';
+  }
+}
+
+function handleFileSelected() {
+  const fileInput = document.getElementById('fileInput');
+  const file = fileInput.files[0];
+  const resultDiv = document.getElementById('fileResult');
+  const verifyBtn = document.getElementById('fileVerifyBtn');
+  
+  if (!file) {
+    selectedUploadFile = null;
+    verifyBtn.style.display = 'none';
+    resultDiv.innerHTML = 'Please select a file';
+    return;
+  }
+  
+  if (!file.name.match(/\.(csv|txt|xlsx)$/i)) {
+    resultDiv.innerHTML = '❌ Unsupported file type. Please use .csv, .txt, or .xlsx';
+    fileInput.value = '';
+    return;
+  }
+  
+  selectedUploadFile = file;
+  verifyBtn.style.display = 'inline-block';
+  resultDiv.innerHTML = `✅ File selected: <strong>${escapeHtml(file.name)}</strong><br><small>Click "Verify File" to start verification (${CREDIT_COST_FILE} credits)</small>`;
+}
+
+async function verifyFile() {
+  const file = selectedUploadFile;
+  const resultDiv = document.getElementById('fileResult');
+  const verifyBtn = document.getElementById('fileVerifyBtn');
+  
+  if (!file) {
+    resultDiv.innerHTML = '❌ No file selected';
+    return;
+  }
+  
+  if (!loggedInEmail) {
+    resultDiv.innerHTML = '❌ Please login to verify emails';
+    return;
+  }
+  
+  if (!ensureCreditsFor(CREDIT_COST_FILE)) {
+    resultDiv.innerHTML = '❌ Insufficient credits. Buy credits first.';
+    return;
+  }
+  
+  verifyBtn.disabled = true;
+  verifyBtn.textContent = 'Verifying...';
+  resultDiv.innerHTML = '⏳ Processing file and verifying emails...';
+  
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await fetch('http://localhost:8001/upload-csv', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const data = await response.json();
+    
+    if (data.error) {
+      resultDiv.innerHTML = `❌ Error: ${escapeHtml(data.error)}`;
+      return;
+    }
+    
+    // Deduct credits
+    await spendCredits(CREDIT_COST_FILE);
+    
+    // Store and display as donut card
+    const summary = getListSummary(data.results || []);
+    const fileName = file.name.replace(/\.[^/.]+$/, '') || 'Uploaded File';
+    const record = {
+      id: nextListId++,
+      name: fileName,
+      total: data.total || data.results.length,
+      results: data.results || [],
+      summary: summary,
+      created_at: Date.now(),
+      expires_at: Date.now() + LIST_RETENTION_MS
+    };
+    
+    verifiedLists.push(record);
+    saveVerifiedLists();
+    
+    // Display donut card
+    if (!resultDiv.querySelector('.list-results-stack')) {
+      resultDiv.innerHTML = '<div class="list-results-stack"></div>';
+    }
+    const stack = resultDiv.querySelector('.list-results-stack');
+    stack.insertAdjacentHTML('beforeend', buildDonutCard(record.id, record.name, record.summary, record.total, record.expires_at));
+    
+    resultDiv.innerHTML += '<div style="margin-top: 12px; padding: 10px; background: #e8f5e8; border-radius: 8px; font-size: 12px;">✅ File verified successfully! <strong>Download</strong> or <strong>Delete</strong> from results above.</div>';
+    
+  } catch (error) {
+    console.error('File verification error:', error);
+    resultDiv.innerHTML = '❌ Cannot connect to file verification server (port 8003).<br>Run: <code>cd verify && python fileemail.py</code>';
+  } finally {
+    verifyBtn.disabled = false;
+    verifyBtn.textContent = 'Verify File';
+  }
+}
+
+setLoggedInUser();
+mountPageSidebar();
+setupUserMenu();
+setupCreditActions();
+loadVerifiedLists();
+</script>
+
+</body>
+</html>

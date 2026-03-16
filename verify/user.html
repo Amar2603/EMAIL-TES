@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-fy User</title>
+<link rel="stylesheet" href="/shared/sidebar.css">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
+body{background:#e8eaec;width:100vw;min-height:100vh;overflow-x:hidden;}
+.app-shell{width:100vw;min-height:100vh;background:#f4f6f7;position:relative;overflow:hidden;}
+.bg-top{position:absolute;left:220px;top:0;width:860px;height:220px;background:radial-gradient(125% 120% at 8% 18%,#37c0cc 0%,#0f5d72 52%,#0b455d 100%);clip-path:path('M 0 0 L 860 0 L 860 20 C 680 56, 560 84, 445 140 C 372 176, 295 218, 200 220 L 0 220 Z');}
+.bg-bottom{position:absolute;right:0;bottom:0;width:640px;height:340px;background:radial-gradient(130% 130% at 75% 82%,#3ec1cb 0%,#105d72 55%,#0a4157 100%);clip-path:path('M 0 340 L 640 340 L 640 0 C 540 54, 462 86, 390 90 C 300 95, 242 108, 180 156 C 126 198, 94 274, 0 340 Z');}
+.main{position:absolute;left:220px;right:0;top:0;min-height:100vh;padding:18px 26px 34px;z-index:2;}
+.topbar{display:flex;justify-content:flex-end;align-items:center;position:relative;margin-bottom:18px;}
+.user-chip{display:flex;align-items:center;gap:8px;color:#1b3341;font-size:12px;cursor:pointer;user-select:none;}
+.caret{font-size:11px;color:#4d6874;}
+.avatar,.settings-avatar{border-radius:50%;background:linear-gradient(135deg,#858585,#bdbdbd);background-size:cover;background-position:center;}
+.avatar{width:24px;height:24px;}
+.settings-avatar{width:48px;height:48px;flex:0 0 auto;}
+.settings-avatar.initials{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:20px;background:linear-gradient(135deg,#37becb,#0d6077);}
+.user-menu{position:absolute;right:0;top:30px;min-width:170px;background:#fff;border:1px solid #d5dde2;border-radius:10px;box-shadow:0 8px 18px rgba(6,35,45,0.16);padding:6px;display:none;z-index:20;}
+.user-menu.open{display:block;}
+.user-menu button{width:100%;border:none;background:#fff;color:#173241;text-align:left;padding:9px 10px;border-radius:7px;font-size:12px;cursor:pointer;}
+.user-menu button:hover{background:#eef5f7;}
+.settings-page{position:relative;z-index:1;max-width:980px;margin:0 auto;}
+.settings-tabs{width:min(610px,100%);margin:0 auto 20px;}
+.settings-tablist{display:flex;gap:6px;background:#dfdfe1;padding:6px;border-radius:24px;}
+.settings-tab{flex:1;border:none;background:transparent;border-radius:20px;padding:8px 6px;font-size:10px;color:#172631;cursor:pointer;}
+.settings-tab.active{background:linear-gradient(90deg,#34b9c8,#0f6f86);color:#fff;box-shadow:0 4px 10px rgba(11,88,105,0.24);}
+.settings-toolbar{display:flex;justify-content:flex-end;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.settings-link-btn{border:none;background:transparent;color:#2897a6;font-size:14px;cursor:pointer;}
+.settings-solid-btn{border:none;background:linear-gradient(90deg,#2eb9c8,#0a5169);color:#fff;padding:10px 18px;border-radius:999px;font-size:12px;cursor:pointer;box-shadow:0 8px 16px rgba(10,81,105,0.22);}
+.settings-section{display:none;}
+.settings-section.active{display:block;}
+.settings-card{background:#fff;border-radius:16px;padding:22px;box-shadow:0 6px 16px rgba(15,30,38,0.12);margin-bottom:16px;}
+.account-card,.api-key-card{display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.account-card-main{display:flex;align-items:center;gap:14px;}
+.account-card h3{font-size:16px;color:#1b2b35;margin-bottom:4px;}
+.muted{color:#7b8b93;font-size:12px;}
+.settings-inline-action{border:none;background:transparent;color:#2897a6;font-size:13px;cursor:pointer;}
+.settings-heading{font-size:18px;color:#1d8ea0;font-weight:700;text-align:right;margin:8px 0 14px;}
+.api-key-meta{display:flex;flex-direction:column;gap:8px;}
+.api-key-actions{display:flex;gap:12px;font-size:13px;}
+.api-copy-btn{border:none;min-width:52px;height:40px;padding:0 12px;border-radius:10px;background:linear-gradient(90deg,#31b9c8,#0d5d74);color:#fff;cursor:pointer;font-size:12px;}
+.restriction-row,.notification-row,.timezone-row{display:grid;gap:10px;}
+.restriction-row{grid-template-columns:1fr auto;align-items:end;}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;}
+.toggle{width:30px;height:18px;border-radius:999px;background:#d7dde1;position:relative;}
+.toggle.on{background:#49c0c9;}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:#fff;}
+.toggle.on::after{left:15px;}
+.auth-layout{display:grid;grid-template-columns:1.2fr 1fr auto 1fr;gap:16px;align-items:start;}
+.qr-box,.code-box{border:1px solid #d6dde2;border-radius:10px;background:#fafafa;min-height:108px;}
+.qr-box{display:grid;place-items:center;background:linear-gradient(90deg,#000 10px,transparent 10px) 0 0/20px 20px,linear-gradient(#000 10px,transparent 10px) 0 0/20px 20px,#fff;}
+.code-box{display:grid;place-items:center;color:#75848d;font-size:13px;letter-spacing:1px;}
+.section-footer{display:flex;justify-content:flex-end;margin-top:10px;}
+.others-panel{max-width:430px;margin:0 auto;}
+.timezone-hero{display:flex;align-items:flex-start;justify-content:flex-start;gap:10px;margin:2px 0 10px;}
+.timezone-hero-icon{width:26px;height:26px;border:2px solid #29a7b6;border-radius:50%;position:relative;flex:0 0 auto;margin-top:1px;}
+.timezone-hero-icon::before{content:'';position:absolute;left:11px;top:4px;width:2px;height:8px;background:#29a7b6;border-radius:999px;}
+.timezone-hero-icon::after{content:'';position:absolute;left:11px;top:11px;width:6px;height:2px;background:#29a7b6;border-radius:999px;}
+.timezone-hero-copy h3{color:#1ca0b1;font-size:16px;line-height:1.1;font-weight:700;margin-bottom:2px;}
+.timezone-hero-copy p{color:#4c6470;font-size:10px;}
+.timezone-card{background:#fff;border-radius:14px;padding:14px 16px 42px;box-shadow:0 8px 18px rgba(15,30,38,0.10);position:relative;min-height:110px;}
+.timezone-datetime{font-size:14px;color:#2b9daf;font-weight:600;margin-bottom:6px;}
+.timezone-label{font-size:11px;color:#27343c;margin-bottom:6px;}
+.timezone-select{width:106px;height:22px;padding:2px 22px 2px 8px;border:none;border-radius:3px;background:#efefef;color:#8a939a;font-size:10px;appearance:none;background-image:linear-gradient(45deg,transparent 50%,#8f98a0 50%),linear-gradient(135deg,#8f98a0 50%,transparent 50%);background-position:calc(100% - 13px) 9px,calc(100% - 9px) 9px;background-size:4px 4px,4px 4px;background-repeat:no-repeat;}
+.timezone-card .section-footer{position:absolute;right:16px;bottom:12px;margin-top:0;}
+.timezone-card .settings-solid-btn{width:100px;padding:6px 14px;font-size:9px;line-height:1;box-shadow:none;}
+.subuser-modal{position:fixed;inset:0;background:rgba(14,32,40,0.34);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+.subuser-modal.open{display:flex;}
+.subuser-dialog{width:min(384px,calc(100% - 32px));background:#f6f6f6;border-radius:14px;padding:22px 22px 16px;box-shadow:0 24px 44px rgba(6,35,45,0.22);position:relative;}
+.subuser-close{position:absolute;top:10px;right:12px;border:none;background:transparent;font-size:16px;line-height:1;cursor:pointer;color:#4d4d4d;}
+.subuser-dialog h3{text-align:center;color:#2a9cab;font-size:17px;margin-bottom:14px;font-weight:700;}
+.subuser-form{display:grid;gap:9px;}
+.subuser-field-label{display:block;margin-bottom:4px;color:#1f2d35;font-size:10px;font-weight:600;}
+.subuser-form input[type="text"],.subuser-form input[type="email"]{width:100%;background:#fff;border:1px solid #9cd1d7;border-radius:3px;padding:9px 10px;font-size:11px;}
+.subuser-form input[type="text"]::placeholder,.subuser-form input[type="email"]::placeholder{color:#a0aab0;}
+.subuser-form input[type="radio"]{accent-color:#2a9cab;}
+.radio-row{display:flex;gap:16px;font-size:10px;color:#30444f;align-items:center;}
+.radio-row label{display:flex;align-items:center;gap:6px;}
+.subuser-submit-btn{width:100%;border:none;background:linear-gradient(90deg,#2daec0,#094f67);color:#fff;padding:9px 16px;border-radius:999px;font-size:13px;cursor:pointer;margin-top:2px;}
+@media (max-width:900px){
+  .main{left:0;padding:18px 16px 28px;}
+  .bg-top,.bg-bottom{left:0;width:100%;}
+  .settings-tablist{flex-wrap:wrap;}
+  .auth-layout,.restriction-row{grid-template-columns:1fr;}
+  .account-card,.api-key-card{flex-direction:column;align-items:flex-start;}
+  .timezone-hero{justify-content:flex-start;}
+  .timezone-hero-copy h3{font-size:15px;}
+  .timezone-datetime{font-size:13px;}
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <div class="bg-top"></div>
+  <div class="bg-bottom"></div>
+  <div id="sidebarMount"></div>
+  <main class="main">
+    <div class="topbar">
+      <div class="user-chip" id="userChip">
+        <div class="avatar" id="topAvatar"></div>
+        <span id="loggedInUser">User</span>
+        <span class="caret">v</span>
+      </div>
+      <div class="user-menu" id="userMenu">
+        <button id="uploadProfileBtn" type="button">Update Profile</button>
+        <button id="backToVerifyBtn" type="button">Verify</button>
+        <button id="logoutBtn" type="button">Logout</button>
+      </div>
+      <input type="file" id="profileInput" accept="image/*" hidden>
+    </div>
+    <section class="settings-page">
+      <div class="settings-tabs">
+        <div class="settings-tablist">
+          <button class="settings-tab active" type="button" data-settings-tab="accounts">Accounts</button>
+          <button class="settings-tab" type="button" data-settings-tab="apiKeys">API Keys</button>
+          <button class="settings-tab" type="button" data-settings-tab="twoFactor">2 Factor Auth</button>
+          <button class="settings-tab" type="button" data-settings-tab="notifications">Notifications</button>
+          <button class="settings-tab" type="button" data-settings-tab="others">Others</button>
+        </div>
+      </div>
+      <div class="settings-toolbar">
+        <button class="settings-link-btn" id="pageUploadBtn" type="button">Upload Profile</button>
+        <button class="settings-link-btn" id="addSubuserBtn" type="button">+ Add New User</button>
+      </div>
+      <section class="settings-section active" id="settings-accounts">
+        <div class="settings-card account-card">
+          <div class="account-card-main">
+            <div class="settings-avatar" id="settingsMainAvatar"></div>
+            <div>
+              <h3 id="settingsAccountName">User</h3>
+              <div class="muted" id="settingsAccountEmail">user@example.com</div>
+            </div>
+          </div>
+          <button class="settings-inline-action" type="button">Edit Account</button>
+        </div>
+        <div id="subuserList"></div>
+      </section>
+      <section class="settings-section" id="settings-apiKeys">
+        <div class="settings-heading">Your API Key</div>
+        <div class="settings-card api-key-card"><div class="api-key-meta"><div>8D********************AGO</div><div class="api-key-actions"><button class="settings-inline-action" type="button">Edit</button><button class="settings-inline-action" type="button" style="color:#d65d74;">Delete</button></div></div><button class="api-copy-btn" type="button">Copy</button></div>
+        <div class="settings-card api-key-card"><div class="api-key-meta"><div>2S********************hfQ</div><div class="api-key-actions"><button class="settings-inline-action" type="button">Edit</button><button class="settings-inline-action" type="button" style="color:#d65d74;">Delete</button></div></div><button class="api-copy-btn" type="button">Copy</button></div>
+        <div class="settings-card api-key-card"><div class="api-key-meta"><div>6E********************rUR</div><div class="api-key-actions"><button class="settings-inline-action" type="button">Edit</button><button class="settings-inline-action" type="button" style="color:#d65d74;">Delete</button></div></div><button class="api-copy-btn" type="button">Copy</button></div>
+        <div class="settings-card">
+          <h3 style="margin-bottom:14px;">API Restrictions</h3>
+          <div class="muted" style="margin-bottom:8px;">Restriction Type:</div>
+          <div class="restriction-row">
+            <input type="text" placeholder="Add IP Address">
+            <button class="settings-solid-btn" type="button">Add New IP Address</button>
+          </div>
+        </div>
+        <div class="section-footer"><button class="settings-solid-btn" type="button">Save Changes</button></div>
+      </section>
+      <section class="settings-section" id="settings-twoFactor">
+        <div class="settings-card">
+          <div class="toggle-row" style="padding-top:0;"><div><h3 style="margin-bottom:4px;">Google two factor authentication</h3><div class="muted">Higher security level</div></div><div class="toggle on"></div></div>
+          <div class="auth-layout" style="margin-top:18px;">
+            <div><h3 style="font-size:14px;margin-bottom:8px;">1. Install Google authentication</h3><div class="muted">Use Google Authenticator or a compatible app.</div></div>
+            <div><h3 style="font-size:14px;margin-bottom:8px;">2. Scan the QR code</h3><div class="qr-box"></div></div>
+            <div style="align-self:center;color:#7d8a92;">OR</div>
+            <div><div class="muted" style="margin-bottom:8px;">Enter this code in your authentication app</div><div class="code-box">LGJRYPJZUQ83</div></div>
+          </div>
+        </div>
+      </section>
+      <section class="settings-section" id="settings-notifications">
+        <div class="settings-heading">Notification</div>
+        <div class="settings-card">
+          <div class="notification-row">
+            <div><div style="margin-bottom:6px;">Webhook Notifications</div><input type="text" placeholder="https://mydomain.com/webhook"></div>
+            <div class="toggle-row"><span>No Credit Notification with Webhook</span><div class="toggle on"></div></div>
+            <div class="toggle-row"><span>Low Credit Notification with Webhook</span><div class="toggle on"></div></div>
+            <div><div style="margin-bottom:6px;">Amount of low credit when notification send</div><input type="text" placeholder="Add Amount"></div>
+            <div class="toggle-row"><span>File Ready Notification with Webhook</span><div class="toggle on"></div></div>
+            <div class="toggle-row"><span>File Delete Notification with Webhook</span><div class="toggle on"></div></div>
+          </div>
+        </div>
+      </section>
+      <section class="settings-section" id="settings-others">
+        <div class="others-panel">
+          <div class="timezone-hero">
+            <div class="timezone-hero-icon"></div>
+            <div class="timezone-hero-copy">
+              <h3>Time Zone Setting</h3>
+              <p>Based On Your Setting Current Time Is: <span id="timezoneNow"></span></p>
+            </div>
+          </div>
+          <div class="timezone-card">
+            <div class="timezone-datetime" id="timezoneDateTime"></div>
+            <div class="timezone-label">Your Time-zone:</div>
+            <select class="timezone-select">
+              <option>Time Zone</option>
+              <option>Asia/Kolkata</option>
+              <option>UTC</option>
+              <option>America/New_York</option>
+            </select>
+            <div class="section-footer"><button class="settings-solid-btn" type="button">Save Changes</button></div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+</div>
+<div class="subuser-modal" id="subuserModal">
+  <div class="subuser-dialog">
+    <button class="subuser-close" id="closeSubuserModalBtn" type="button">&times;</button>
+    <h3>Add Subuser</h3>
+    <div class="subuser-form">
+      <div><label class="subuser-field-label" for="subuserFirstName">First Name:</label><input type="text" id="subuserFirstName" placeholder=""></div>
+      <div><label class="subuser-field-label" for="subuserLastName">Last Name:</label><input type="text" id="subuserLastName" placeholder=""></div>
+      <div><label class="subuser-field-label" for="subuserEmailInput">Email:</label><input type="email" id="subuserEmailInput" placeholder=""></div>
+      <div><label class="subuser-field-label">Account Type:</label><div class="radio-row"><label><input type="radio" name="subuserType" value="isolated" checked> Isolated</label><label><input type="radio" name="subuserType" value="shared"> Shared</label></div></div>
+      <button class="subuser-submit-btn" id="createSubuserBtn" type="button">Add New user</button>
+    </div>
+  </div>
+</div>
+<script src="/shared/sidebar.js"></script>
+<script>
+let loggedInEmail = '';
+let availableCredits = 100;
+let settingsTab = 'accounts';
+const SUBUSER_STORAGE_KEY = 'efy_subusers_v1';
+function getUserParams(){const params=new URLSearchParams();params.set('username',document.getElementById('loggedInUser').textContent||sessionStorage.getItem('username')||'User');params.set('email',loggedInEmail||'');return params;}
+function mountPageSidebar(){if(typeof mountSharedSidebar!=='function'){return;}mountSharedSidebar({mountId:'sidebarMount',active:'email_verification',credits:availableCredits,getParams:getUserParams,onBuyCredits:function(){window.location.href='/billing/index.html?'+getUserParams().toString();}});}
+function setCreditsDisplay(value){availableCredits=Math.max(0,Number(value)||0);if(typeof updateSharedSidebarCredits==='function'){updateSharedSidebarCredits(availableCredits);}}
+function getInitials(name){const parts=String(name||'').trim().split(/\s+/).filter(Boolean);if(parts.length===0){return 'U';}return parts.slice(0,2).map(part=>part.charAt(0).toUpperCase()).join('');}
+function applyProfileImage(imageUrl){const finalUrl=imageUrl?(imageUrl+'?t='+Date.now()):'';document.querySelectorAll('#topAvatar, #settingsMainAvatar').forEach(function(el){if(finalUrl){el.style.backgroundImage='url('+finalUrl+')';el.style.backgroundColor='transparent';el.textContent='';el.classList.remove('initials');}else{el.style.backgroundImage='';}});}
+function updateProfileSummary(){const displayName=document.getElementById('loggedInUser').textContent||'User';document.getElementById('settingsAccountName').textContent=displayName;document.getElementById('settingsAccountEmail').textContent=loggedInEmail||'user@example.com';const mainAvatar=document.getElementById('settingsMainAvatar');if(mainAvatar&&!mainAvatar.style.backgroundImage){mainAvatar.classList.add('initials');mainAvatar.textContent=getInitials(displayName);}}
+function refreshTimezoneDisplay(){const now=new Date();const formatted=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');const timezoneLine=formatted+' ('+Intl.DateTimeFormat().resolvedOptions().timeZone+')';document.getElementById('timezoneDateTime').textContent=timezoneLine;document.getElementById('timezoneNow').textContent=timezoneLine;}
+function switchSettingsTab(tabId){settingsTab=tabId;document.querySelectorAll('.settings-tab').forEach(function(tab){tab.classList.toggle('active',tab.dataset.settingsTab===tabId);});document.querySelectorAll('.settings-section').forEach(function(section){section.classList.toggle('active',section.id==='settings-'+tabId);});}
+function setLoggedInUser(){const urlParams=new URLSearchParams(window.location.search);let username=urlParams.get('username');let email=urlParams.get('email');if(!username){username=sessionStorage.getItem('username');}const currentUser=localStorage.getItem('currentUser');if(currentUser){try{const parsedUser=JSON.parse(currentUser);if(!username){username=parsedUser.fullname;}if(!email){email=parsedUser.email;}if(typeof parsedUser.credits!=='undefined'){setCreditsDisplay(parsedUser.credits);}}catch(e){}}document.getElementById('loggedInUser').textContent=username||'User';loggedInEmail=(email||'').toLowerCase();updateProfileSummary();}
+async function fetchCredits(){if(!loggedInEmail){return;}try{const response=await fetch('/credits?email='+encodeURIComponent(loggedInEmail));const data=await response.json();if(response.ok&&data.success){setCreditsDisplay(data.credits);}}catch(e){}}
+async function loadProfile(){if(!loggedInEmail){return;}try{const response=await fetch('/profile?email='+encodeURIComponent(loggedInEmail));const data=await response.json();if(!response.ok||!data.success){return;}if(data.fullname){document.getElementById('loggedInUser').textContent=data.fullname;sessionStorage.setItem('username',data.fullname);}if(typeof data.credits!=='undefined'){setCreditsDisplay(data.credits);}if(data.profile_image_url){applyProfileImage(data.profile_image_url);}updateProfileSummary();}catch(e){}}
+function getSubuserStorageKey(){return SUBUSER_STORAGE_KEY+':'+(loggedInEmail||'guest').toLowerCase();}
+function loadSavedSubusers(){try{const raw=localStorage.getItem(getSubuserStorageKey())||'[]';const parsed=JSON.parse(raw);return Array.isArray(parsed)?parsed:[];}catch(e){return [];}}
+function saveSubusers(items){try{localStorage.setItem(getSubuserStorageKey(),JSON.stringify(items));}catch(e){}}
+function openSubuserModal(){document.getElementById('subuserModal').classList.add('open');}
+function closeSubuserModal(){document.getElementById('subuserModal').classList.remove('open');}
+function appendSubuserCard(fullName,email){const subuserList=document.getElementById('subuserList');if(!subuserList){return;}const card=document.createElement('div');card.className='settings-card account-card';card.innerHTML='<div class="account-card-main"><div class="settings-avatar initials"></div><div><h3></h3><div class="muted"></div></div></div><button class="settings-inline-action" type="button">Edit Account</button>';card.querySelector('.settings-avatar').textContent=getInitials(fullName);card.querySelector('h3').textContent=fullName;card.querySelector('.muted').textContent=email;subuserList.appendChild(card);}
+function renderSavedSubusers(){const subuserList=document.getElementById('subuserList');if(!subuserList){return;}subuserList.innerHTML='';loadSavedSubusers().forEach(function(item){appendSubuserCard(item.fullName,item.email);});}
+function createSubuserPreview(){const firstName=document.getElementById('subuserFirstName').value.trim();const lastName=document.getElementById('subuserLastName').value.trim();const email=document.getElementById('subuserEmailInput').value.trim();const fullName=(firstName+' '+lastName).trim()||firstName;if(!firstName||!email){alert('Enter first name and email for the subuser.');return;}const savedSubusers=loadSavedSubusers();savedSubusers.push({fullName:fullName,email:email});saveSubusers(savedSubusers);appendSubuserCard(fullName,email);document.getElementById('subuserFirstName').value='';document.getElementById('subuserLastName').value='';document.getElementById('subuserEmailInput').value='';document.querySelectorAll('input[name=\"subuserType\"]').forEach(function(input,index){input.checked=index===0;});closeSubuserModal();}
+function setupUserMenu(){const userChip=document.getElementById('userChip');const userMenu=document.getElementById('userMenu');const uploadBtn=document.getElementById('uploadProfileBtn');const pageUploadBtn=document.getElementById('pageUploadBtn');const logoutBtn=document.getElementById('logoutBtn');const backToVerifyBtn=document.getElementById('backToVerifyBtn');const profileInput=document.getElementById('profileInput');userChip.addEventListener('click',function(event){event.stopPropagation();userMenu.classList.toggle('open');});document.addEventListener('click',function(event){if(!userMenu.contains(event.target)&&!userChip.contains(event.target)){userMenu.classList.remove('open');}});function triggerProfileUpload(){if(!loggedInEmail){alert('Unable to identify logged-in user.');return;}profileInput.click();}uploadBtn.addEventListener('click',function(){userMenu.classList.remove('open');triggerProfileUpload();});pageUploadBtn.addEventListener('click',triggerProfileUpload);profileInput.addEventListener('change',async function(){const file=profileInput.files[0];if(!file){return;}const formData=new FormData();formData.append('email',loggedInEmail);formData.append('profile',file);try{const response=await fetch('/upload-profile',{method:'POST',body:formData});const data=await response.json();if(!response.ok||!data.success){alert(data.message||'Failed to upload profile image');return;}await loadProfile();alert('Profile image updated.');}catch(e){alert('Cannot connect to server.');}finally{profileInput.value='';}});backToVerifyBtn.addEventListener('click',function(){window.location.href='/verify/index.html?'+getUserParams().toString();});logoutBtn.addEventListener('click',function(){localStorage.removeItem('currentUser');sessionStorage.removeItem('username');window.location.href='/home/index.html';});}
+function setupPageActions(){document.querySelectorAll('.settings-tab').forEach(function(tab){tab.addEventListener('click',function(){switchSettingsTab(tab.dataset.settingsTab);});});document.getElementById('addSubuserBtn').addEventListener('click',openSubuserModal);document.getElementById('closeSubuserModalBtn').addEventListener('click',closeSubuserModal);document.getElementById('createSubuserBtn').addEventListener('click',createSubuserPreview);document.getElementById('subuserModal').addEventListener('click',function(event){if(event.target===this){closeSubuserModal();}});}
+setLoggedInUser();mountPageSidebar();setupUserMenu();setupPageActions();renderSavedSubusers();fetchCredits();loadProfile();refreshTimezoneDisplay();
+</script>
+</body>
+</html>
