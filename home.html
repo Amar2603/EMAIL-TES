@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>home</title>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  background: #d7d8db;
+  overflow: hidden;
+}
+
+.bg-frame {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.bg-frame iframe {
+  position: absolute;
+  inset: -5%;
+  width: 110%;
+  height: 110%;
+  border: 0;
+  transform: scale(1.04);
+  transform-origin: center center;
+  filter: blur(5px);
+  pointer-events: none;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  backdrop-filter: blur(8px);
+  background: rgba(225, 226, 229, 0.28);
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.popup {
+  width: 470px;
+  min-height: 560px;
+  padding: 40px 42px 38px;
+  border-radius: 28px;
+  text-align: center;
+  background: linear-gradient(135deg, #2eb1bc 0%, #145f6c 100%);
+  box-shadow: 0 28px 60px rgba(9, 24, 34, 0.35);
+  color: white;
+}
+
+.gift {
+  font-size: 58px;
+  margin-bottom: 12px;
+}
+
+.popup h2 {
+  font-size: 42px;
+  font-weight: 600;
+  margin-bottom: 36px;
+}
+
+.popup p {
+  font-size: 24px;
+  line-height: 1.3;
+  margin-bottom: 50px;
+}
+
+.popup .big-number {
+  font-size: 82px;
+  font-weight: 700;
+  margin: 0 8px;
+  letter-spacing: 1px;
+}
+
+.popup .free-text {
+  font-size: 50px;
+  font-weight: 600;
+}
+
+.popup button {
+  width: 100%;
+  background: #eceef0;
+  color: #178c9a;
+  border: 2px solid #29b0bc;
+  padding: 10px 18px;
+  font-size: 36px;
+  font-weight: 500;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(6, 31, 41, 0.3);
+  transition: 0.3s ease;
+}
+
+.popup button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 30px rgba(6, 31, 41, 0.35);
+}
+
+@media (max-width: 900px) {
+  .popup {
+    width: min(92vw, 470px);
+    min-height: auto;
+    padding: 30px 24px 28px;
+    border-radius: 20px;
+  }
+
+  .popup h2 {
+    font-size: 32px;
+    margin-bottom: 26px;
+  }
+
+  .popup p {
+    font-size: 22px;
+    margin-bottom: 30px;
+  }
+
+  .popup .big-number {
+    font-size: 62px;
+  }
+
+  .popup .free-text {
+    font-size: 36px;
+  }
+
+  .popup button {
+    font-size: 28px;
+    border-radius: 12px;
+  }
+}
+</style>
+
+</head>
+<body>
+
+<div class="bg-frame">
+  <iframe src="/verify/index.html" title="verify background"></iframe>
+</div>
+
+<div class="overlay" id="welcomeOverlay">
+  <div class="popup">
+    <div class="gift">&#127873;</div>
+
+    <h2 id="welcomeText">Welcome, User</h2>
+
+    <p>
+      Get
+      <span class="big-number">100</span>
+      <span class="free-text">Free</span>
+      Credits and Start Verifying Emails Right Now
+    </p>
+
+    <button id="getStartedBtn" type="button">Get Started</button>
+
+  </div>
+</div>
+
+<script>
+  const WELCOME_FLAG_PREFIX = 'efy_welcome_shown_v1:';
+  const urlParams = new URLSearchParams(window.location.search);
+
+  let username = urlParams.get('username');
+  let email = urlParams.get('email');
+
+  if (!username) {
+    username = sessionStorage.getItem('username');
+  }
+
+  const currentUserRaw = localStorage.getItem('currentUser');
+  if (currentUserRaw) {
+    try {
+      const user = JSON.parse(currentUserRaw);
+      if (!username) {
+        username = user.fullname;
+      }
+      if (!email) {
+        email = user.email;
+      }
+    } catch (e) {}
+  }
+
+  if (!username) {
+    username = 'User';
+  }
+
+  document.getElementById('welcomeText').textContent = 'Welcome, ' + username;
+
+  const identityKey = (email || username).toLowerCase();
+  const welcomeFlagKey = WELCOME_FLAG_PREFIX + identityKey;
+
+  function getVerifyUrl() {
+    const params = new URLSearchParams();
+    if (username) {
+      params.set('username', username);
+    }
+    if (email) {
+      params.set('email', email);
+    }
+    const qs = params.toString();
+    return '/verify/index.html' + (qs ? ('?' + qs) : '');
+  }
+
+  const alreadyShown = localStorage.getItem(welcomeFlagKey) === '1';
+  const overlayEl = document.getElementById('welcomeOverlay');
+  if (alreadyShown) {
+    window.location.replace(getVerifyUrl());
+  } else if (overlayEl) {
+    overlayEl.style.display = 'flex';
+  }
+
+  document.getElementById('getStartedBtn').addEventListener('click', function() {
+    localStorage.setItem(welcomeFlagKey, '1');
+    window.location.href = getVerifyUrl();
+  });
+</script>
+
+</body>
+</html>

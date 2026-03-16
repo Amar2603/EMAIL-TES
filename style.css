@@ -1,0 +1,149 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+body{
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:#e9ecef;
+    position:relative;
+    overflow:hidden;
+}
+
+/* TOP RIGHT TEAL SHAPE */
+body::before{
+    content:"";
+    position:absolute;
+    top:0;
+    right:0;
+    width:60%;
+    height:100%;
+    background:linear-gradient(135deg,#2aa6b4,#0f4c75);
+    clip-path:polygon(30% 0,100% 0,100% 100%,0 100%);
+    z-index:0;
+}
+
+/* BOTTOM DARK DIAGONAL */
+body::after{
+    content:"";
+    position:absolute;
+    bottom:-150px;
+    left:-150px;
+    width:500px;
+    height:500px;
+    background:#0f2027;
+    transform:rotate(45deg);
+    z-index:0;
+}
+
+/* MAIN CARD */
+.container{
+    width:950px;
+    height:520px;
+    background:white;
+    border-radius:25px;
+    display:flex;
+    overflow:hidden;
+    box-shadow:0 25px 60px rgba(0,0,0,0.25);
+    position:relative;
+    z-index:2;
+}
+
+/* LEFT PANEL */
+.left-panel{
+    width:50%;
+    padding:70px 50px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+}
+
+.left-panel h1{
+    font-size:36px;
+    color:#0e4d64;
+    margin-bottom:25px;
+}
+
+.left-panel p{
+    color:#555;
+    margin-bottom:25px;
+}
+
+.switch-btn{
+    padding:12px 35px;
+    border:2px solid #0e4d64;
+    background:transparent;
+    border-radius:30px;
+    cursor:pointer;
+    font-size:16px;
+    transition:0.3s;
+}
+
+.switch-btn:hover{
+    background:#0e4d64;
+    color:white;
+}
+
+/* RIGHT PANEL */
+.right-panel{
+    width:50%;
+    padding:70px 50px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:transparent;
+}
+
+form{
+    width:100%;
+}
+
+form h1{
+    margin-bottom:25px;
+    color:#0e4d64;
+}
+
+input{
+    width:100%;
+    padding:14px 18px;
+    margin-bottom:18px;
+    border:none;
+    border-radius:30px;
+    background:#f2f2f2;
+    outline:none;
+}
+
+button[type="submit"]{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:30px;
+    background:linear-gradient(to right,#2aa6b4,#0f4c75);
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+button[type="submit"]:hover{
+    opacity:0.9;
+}
+
+#message{
+    margin-bottom:10px;
+}
+
+.error{color:red;}
+.success{color:green;}
+
+.google-btn-container {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

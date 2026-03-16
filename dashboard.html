@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f2f2f2;
+      overflow: hidden;
+    }
+
+    .welcome-page {
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    /* Center Card */
+    .card {
+      width: 500px;
+      background: #dfe6e9;
+      padding: 60px 40px;
+      border-radius: 30px;
+      text-align: center;
+      z-index: 10;
+    }
+
+    /* Check Circle */
+    .check-circle {
+      width: 100px;
+      height: 100px;
+      background: #2fa6ad;
+      border-radius: 50%;
+      margin: 0 auto 30px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset -15px -15px 0px #0f4c5c;
+    }
+
+    .check-circle span {
+      color: white;
+      font-size: 40px;
+      font-weight: bold;
+    }
+
+    h1 {
+      font-size: 48px;
+      margin: 0;
+      color: black;
+    }
+
+    .subtitle {
+      margin-top: 20px;
+      font-size: 22px;
+      color: #333;
+    }
+
+    /* Decorative Background Circles */
+
+    .circle {
+      position: absolute;
+      border-radius: 50%;
+    }
+
+    .circle1 {
+      width: 350px;
+      height: 350px;
+      background: #0f4c5c;
+      top: -120px;
+      left: -120px;
+    }
+
+    .circle2 {
+      width: 300px;
+      height: 300px;
+      background: #2fa6ad;
+      bottom: -120px;
+      right: -120px;
+    }
+
+    .circle3 {
+      width: 250px;
+      height: 250px;
+      background: #2fa6ad;
+      bottom: -60px;
+      left: -60px;
+    }
+
+    /* Continue Button */
+    .continue-btn {
+      display: inline-block;
+      margin-top: 30px;
+      padding: 12px 30px;
+      background: #2fa6ad;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: bold;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .continue-btn:hover {
+      background: #0f4c5c;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="welcome-page">
+
+    <!-- Background Circles -->
+    <div class="circle circle1"></div>
+    <div class="circle circle2"></div>
+    <div class="circle circle3"></div>
+
+    <!-- Center Card -->
+    <div class="card">
+      <div class="check-circle">
+        <span>✓</span>
+      </div>
+
+      <h1>WELCOME !</h1>
+      <div class="subtitle">LOGIN SUCCESSFULLY</div>
+      
+      <a href="#" class="continue-btn" onclick="goToHome()">Click Here to Continue</a>
+
+    <script>
+      // Get username from sessionStorage or localStorage (set by login)
+      function goToHome() {
+        let username = sessionStorage.getItem('username');
+        
+        // Fallback to localStorage currentUser
+        if (!username) {
+          const currentUser = localStorage.getItem('currentUser');
+          if (currentUser) {
+            const user = JSON.parse(currentUser);
+            username = user.fullname;
+          }
+        }
+        
+        // Fallback to 'User' if neither exists
+        if (!username) {
+          username = 'User';
+        }
+        
+        window.location.href = 'home.html?username=' + encodeURIComponent(username);
+      }
+    </script>
+    </div>
+
+  </div>
+</body>
+</html>
+
