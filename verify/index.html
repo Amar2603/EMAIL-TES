@@ -1527,7 +1527,7 @@ async function verifyList(){
   
   let data;
   try{
-    const response=await fetch('http://localhost:8001/verify-list?emails=' + encodeURIComponent(emails.join(',')));
+    const response=await fetch('/verify-list?emails=' + encodeURIComponent(emails.join(',')));
     data=await response.json();
   }catch(error){
     resultDiv.innerHTML='Error: Cannot connect to bulk verification server. Run python verify/listemail.py and try again.';
