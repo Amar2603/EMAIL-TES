@@ -195,8 +195,8 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 
 def run_server():
-    port = 8001
-    server = HTTPServer(('localhost', port), RequestHandler)
+    port = int(os.environ.get("PORT", 8002))
+    server = HTTPServer(('0.0.0.0', port), RequestHandler)
     print('=' * 60)
     print('E-fy List Email Verification Server')
     print(f'Running at: http://localhost:{port}')
