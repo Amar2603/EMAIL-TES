@@ -6,6 +6,9 @@ import random
 import string
 import json
 from time import sleep
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from urllib.parse import urlparse, parse_qs
+
 
 # Config
 NUM_FAKE_CHECKS = 5
@@ -360,55 +363,92 @@ def validate_email(email):
 
 
 # HTTP Request Handler
-from flask import Flask, request, jsonify
-import os
+class RequestHandler(BaseHTTPRequestHandler):
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Max-Age', '86400')
+        self.end_headers()
+    
+    def do_GET(self):
+        parsed_path = urlparse(self.path)
+        path = parsed_path.path
+        query = parse_qs(parsed_path.query)
+        
+        # API: Verify single email
+        if path == '/verify-email':
+            email = query.get('email', [''])[0]
+            if not email:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({'status': 'Error', 'message': 'No email provided'}).encode())
+                return
+            
+            status, code, message = validate_email(email)
+            result = {
+                'status': status,
+                'smtp_code': code,
+                'message': message
+            }
+            
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps(result).encode())
+        
+        # API: Verify list of emails
+        elif path == '/verify-list':
+            emails_param = query.get('emails', [''])[0]
+            emails = [e.strip() for e in emails_param.split(',') if e.strip()]
+            
+            if not emails:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': 'No emails provided'}).encode())
+                return
+            
+            results = []
+            for email in emails:
+                status, code, message = validate_email(email)
+                results.append({
+                    'email': email,
+                    'status': status,
+                    'message': message
+                })
+            
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({'results': results, 'total': len(results)}).encode())
+        
+        else:
+            self.send_response(404)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': 'Not found'}).encode())
+    
+    def log_message(self, format, *args):
+        print(f"[{self.log_date_time_string()}] {format % args}")
 
-app = Flask(__name__)
+def run_server():
+    port = 8001
+    server = HTTPServer(('localhost', port), RequestHandler)
+    print('='*60)
+    print('E-fy Single Email Verification Server')
+    print(f'Running at: http://localhost:{port}')
+    print('='*60)
+    print('Open your browser and go to: http://localhost:8001')
+    print('='*60)
+    server.serve_forever()
 
-@app.route("/")
-def home():
-    return "Email Verifier Running 🚀"
-
-@app.route("/verify-email")
-def verify_email_api():
-    email = request.args.get("email")
-
-    if not email:
-        return jsonify({
-            "status": "Error",
-            "message": "No email provided"
-        }), 400
-
-    status, code, message = validate_email(email)
-
-    return jsonify({
-        "status": status,
-        "smtp_code": code,
-        "message": message
-    })
-
-@app.route("/verify-list")
-def verify_list_api():
-    emails_param = request.args.get("emails", "")
-    emails = [e.strip() for e in emails_param.split(",") if e.strip()]
-
-    if not emails:
-        return jsonify({"error": "No emails provided"}), 400
-
-    results = []
-    for email in emails:
-        status, code, message = validate_email(email)
-        results.append({
-            "email": email,
-            "status": status,
-            "message": message
-        })
-
-    return jsonify({
-        "results": results,
-        "total": len(results)
-    })
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+if __name__ == '__main__':
+    run_server()
