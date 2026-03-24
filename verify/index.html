@@ -1186,7 +1186,7 @@ async function verifySingle(){
 
   let data;
   try{
-    const response=await fetch('http://localhost:8001/verify-email?email=' + encodeURIComponent(email));
+    const response=await fetch('/verify-email?email=' + email);
     data=await response.json();
   }catch(error){
     tryLocalVerification(email, result);
