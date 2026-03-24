@@ -417,4 +417,4 @@ def verify_email():
 if __name__ == '__main__':
     init_db()
     # Bind to all interfaces and enable debug
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
