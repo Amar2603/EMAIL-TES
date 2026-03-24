@@ -7,6 +7,7 @@ import json
 from time import sleep
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
+import os
 
 # Config
 NUM_FAKE_CHECKS = 5
