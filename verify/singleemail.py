@@ -10,9 +10,16 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
 # Config
-NUM_FAKE_CHECKS = 3
+NUM_FAKE_CHECKS = 5
 SMTP_RETRIES = 5
-ENABLE_CATCH_ALL_CHECK = False
+ENABLE_CATCH_ALL_CHECK = True
+MAIL_FROM_CANDIDATES = (
+    'postmaster@{domain}',
+    'noreply@{domain}',
+    'verify@{domain}',
+    'test@example.com',
+    '<>',
+)
 
 def validate_email_format(email):
     pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
@@ -21,6 +28,65 @@ def validate_email_format(email):
 def generate_random_email(domain):
     local_part = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
     return f"{local_part}@{domain}"
+
+def smtp_accepts_recipient(code, message):
+    try:
+        code = int(code)
+    except (TypeError, ValueError):
+        return False
+
+    if isinstance(message, bytes):
+        message = message.decode('utf-8', errors='ignore')
+    message = str(message).lower()
+    return code in (250, 251, 252) or '2.1.5' in message or 'recipient ok' in message
+
+def smtp_accepts_sender(code, message):
+    try:
+        code = int(code)
+    except (TypeError, ValueError):
+        return False
+
+    if isinstance(message, bytes):
+        message = message.decode('utf-8', errors='ignore')
+    message = str(message).lower()
+    return code in (250, 251, 252) or 'sender ok' in message or 'ok' == message.strip()
+
+def establish_mail_from(server, domain):
+    last_code = None
+    last_message = 'MAIL FROM command was not accepted'
+
+    for template in MAIL_FROM_CANDIDATES:
+        sender = template.format(domain=domain)
+        try:
+            server.rset()
+        except Exception:
+            pass
+
+        try:
+            code, message = server.mail(sender)
+            last_code, last_message = code, message
+            if smtp_accepts_sender(code, message):
+                return True, code, message
+        except smtplib.SMTPException as e:
+            last_message = str(e)
+        except Exception as e:
+            last_message = str(e)
+
+    return False, last_code, last_message
+
+def detect_catch_all(server, domain):
+    accepted = 0
+
+    for _ in range(NUM_FAKE_CHECKS):
+        ready, _, _ = establish_mail_from(server, domain)
+        if not ready:
+            continue
+        fake_email = generate_random_email(domain)
+        code_fake, msg_fake = server.rcpt(fake_email)
+        if smtp_accepts_recipient(code_fake, msg_fake):
+            accepted += 1
+
+    return accepted >= max(4, NUM_FAKE_CHECKS)
 
 def validate_domain(domain):
     """Validate domain with multiple fallback methods and return record info."""
@@ -111,52 +177,46 @@ def categorize_smtp_response(code, message):
     message = str(message).lower()
     
     # Valid responses
-    if code in (250, 251):
+    if code in (250, 251, 252):
         return 'Valid'
-    
-    # Bounce/Invalid - Mailbox doesn't exist or rejected
-    if code in (550, 551, 552, 553, 554, 555):
-        return 'Bounce'
-    if code >= 550:
-        return 'Bounce'
-    if any(x in message for x in ['5.1.0', '5.1.1', '5.1.2', '5.1.3', '5.1.4', '5.1.5', '5.1.6', '5.1.7', '5.1.8', '5.1.9',
-                                   '5.2.0', '5.2.1', '5.2.2', '5.2.3', '5.2.4', '5.3.0', '5.4.0', '5.5.0', '5.6.0', '5.7.0',
-                                   'user unknown', 'user not found', 'mailbox not found', 'no such user', 'does not exist',
-                                   'invalid mailbox', 'mailbox unavailable', 'mailbox disabled', 'mailbox full',
-                                   'quota exceeded', 'message rejected', 'access denied', 'relay denied']):
-        return 'Bounce'
-    
-    # Bounce patterns - Enhanced detection
-    bounce_keywords = [
+
+    hard_bounce_keywords = [
         'user unknown', 'user not found', 'mailbox not found', 'no such user', 'no such address',
         'does not exist', 'not exist', 'address not found', 'recipient not found',
-        'invalid mailbox', 'mailbox unavailable', 'mailbox disabled', 'mailbox disabled, not enabled',
+        'invalid mailbox', 'unknown recipient', 'invalid recipient', 'recipient unknown',
+        '5.1.1', '5.1.0', '5.1.3', '5.1.6', '5.1.7', '5.1.10',
+        'domain not found', 'domain invalid', 'invalid domain',
+        'alias not found', 'mailing list not found', 'bad address'
+    ]
+
+    soft_failure_keywords = [
         'mailbox full', 'quota exceeded', 'mailbox quota', 'storage quota',
         'message rejected', 'access denied', 'relay denied', 'relay access denied',
         'sender rejected', 'rcpt rejected', 'recipient rejected',
         'spam detected', 'spam rejected', 'blocked', 'blocked by',
         'suspicious', 'policy violation', 'policy reject',
-        'domain not found', 'domain invalid', 'invalid domain',
-        'alias not found', 'mailing list not found',
         'too large', 'message too big', 'size limit',
-        'bad destination', 'bad address', 'routing error',
-        'dns failure', 'dns error', 'host not found', 'no route to host',
-        'system error', 'temporary error', 'permanent error',
-        'exceeded', 'limit exceeded', 'rate limit',
+        'routing error', 'dns failure', 'dns error', 'host not found', 'no route to host',
+        'system error', 'temporary error', 'rate limit', 'too many',
         'account disabled', 'account expired', 'account inactive',
         'verify failed', 'validation failed', 'authentication required',
         'not authorized', 'permission denied', 'unauthorized',
-        'disposable', 'throwaway', 'temporary address', 'fake email',
         'known spammer', 'blacklisted', 'blocklist', 'denylist',
-        'handle unknown', 'invalid recipient', 'unknown recipient',
         'mail is denied', 'message denied', 'content rejected',
-        'sorry', 'unable to deliver', 'cannot deliver', 'delivery failed',
-        '550 5', '550-5', '5.0.0'
+        'greylist', 'greylisted', 'try again', 'please try', 'please wait',
+        '421 ', '450 ', '451 ', '452 ', '4.2.', '4.3.', '4.4.', '4.7.'
     ]
-    
-    if any(x in message for x in bounce_keywords):
+
+    if any(x in message for x in soft_failure_keywords):
+        return 'Unknown'
+
+    if any(x in message for x in hard_bounce_keywords):
         return 'Bounce'
-    
+
+    # Treat only explicit hard failures as Bounce. Other 5xx errors are often policy blocks.
+    if code in (550, 551, 553) and any(x in message for x in ('unknown', 'not found', 'does not exist', 'invalid', 'no such')):
+        return 'Bounce'
+
     # Unknown - Server busy or temporary issues (greylisting)
     if code in (421, 450, 451, 452, 471, 472, 473, 474):
         greylist_patterns = ['try again', 'please try', 'greylist', 'greylisted', 
@@ -168,35 +228,48 @@ def categorize_smtp_response(code, message):
     if code >= 400 and code < 500:
         return 'Unknown'
     
-    # Other server errors
-    if code >= 500 and code < 550:
+    # Other server errors are ambiguous unless they clearly identify a bad mailbox.
+    if code >= 500:
+        if any(x in message for x in ['does not exist', 'no such user', '5.1.1']):
+         return 'Bounce'
         return 'Unknown'
     
     # If we can't determine, return Unknown
     return 'Unknown'
 
 def smtp_check(mx_record, email, domain):
+    server = None
     try:
         server = smtplib.SMTP(mx_record, timeout=30)
-        server.helo()
-        server.mail('test@example.com')
+        try:
+            server.ehlo()
+        except Exception:
+            server.helo()
+
+        mail_ready, mail_code, mail_msg = establish_mail_from(server, domain)
+        if not mail_ready:
+            decoded_mail_msg = mail_msg.decode('utf-8', errors='ignore') if isinstance(mail_msg, bytes) else str(mail_msg)
+            return 'Unknown', mail_code, f'MAIL FROM rejected: {decoded_mail_msg}'
+
         code_real, msg_real = server.rcpt(email)
         decoded_msg_real = msg_real.decode() if isinstance(msg_real, bytes) else str(msg_real)
 
+        if code_real == 503 and 'need mail command' in decoded_msg_real.lower():
+            mail_ready, mail_code, mail_msg = establish_mail_from(server, domain)
+            if mail_ready:
+                code_real, msg_real = server.rcpt(email)
+                decoded_msg_real = msg_real.decode() if isinstance(msg_real, bytes) else str(msg_real)
+            else:
+                decoded_mail_msg = mail_msg.decode('utf-8', errors='ignore') if isinstance(mail_msg, bytes) else str(mail_msg)
+                return 'Unknown', mail_code, f'MAIL FROM rejected: {decoded_mail_msg}'
+
         # Catch-All Detection
-        if ENABLE_CATCH_ALL_CHECK and code_real == 250:
-            is_catch_all = True
-            for _ in range(NUM_FAKE_CHECKS):
-                fake_email = generate_random_email(domain)
-                code_fake, _ = server.rcpt(fake_email)
-                if code_fake != 250:
-                    is_catch_all = False
-                    break
-            server.quit()
-            return ('Catch-All' if is_catch_all else 'Valid'), code_real, decoded_msg_real
+        if ENABLE_CATCH_ALL_CHECK and smtp_accepts_recipient(code_real, decoded_msg_real):
+            if detect_catch_all(server, domain):
+                return 'Catch-All', code_real, f'{decoded_msg_real} | catch-all probe accepted'
+            return 'Valid', code_real, decoded_msg_real
 
         result = categorize_smtp_response(code_real, decoded_msg_real)
-        server.quit()
         return result, code_real, decoded_msg_real
 
     except smtplib.SMTPServerDisconnected:
@@ -220,6 +293,12 @@ def smtp_check(mx_record, email, domain):
             return 'Unknown', None, 'Connection failed - server may be blocking'
         else:
             return 'Unknown', None, str(e)
+    finally:
+        if server is not None:
+            try:
+                server.quit()
+            except Exception:
+                pass
 
 def validate_email(email):
     if not validate_email_format(email):
@@ -241,7 +320,7 @@ def validate_email(email):
             for _ in range(SMTP_RETRIES):
                 status, code, message = smtp_check(mx_record, email, domain)
                 # Return the actual SMTP result (Valid, Bounce, or Unknown)
-                if status == 'Valid':
+                if status in ('Valid', 'Catch-All'):
                     return status, code, message
                 elif status == 'Bounce':
                     return status, code, message
@@ -251,23 +330,35 @@ def validate_email(email):
             pass
         
         # If SMTP fails, return syntax valid with domain info
-        return 'Valid (Syntax)', None, f'Email format valid, domain resolved via {domain_info["type"]}'
+        return 'Valid', None, f'Email format valid, domain resolved via {domain_info["type"]}'
 
     # Try SMTP validation with MX record
+    last_unknown_message = None
     for _ in range(SMTP_RETRIES):
         status, code, message = smtp_check(mx_record, email, domain)
-        # Return actual SMTP results - don't fall back to Valid (Syntax)
-        if status == 'Valid':
+        if status in ('Valid', 'Catch-All'):
             return status, code, message
         elif status == 'Bounce':
             return status, code, message
-        # If Unknown, return Unknown instead of falling back
         elif status == 'Unknown':
-            return status, code, message
+            last_unknown_message = message
+            sleep(1)
+            continue
         sleep(1)
 
-    # If SMTP fails completely, return Unknown
-    return 'Unknown', None, 'SMTP validation failed - server not responding'
+    # Many providers block mailbox-level SMTP probing. If the domain has MX but
+    # never gives a hard bounce, treat it as valid at the domain level.
+
+    if last_unknown_message:
+        # Detect bounce from message
+        msg = last_unknown_message.lower()
+
+        if "does not exist" in msg or "no such user" in msg or "5.1.1" in msg:
+            return 'Bounce', None, last_unknown_message
+    
+        return 'Unknown', None, last_unknown_message
+
+    return 'Unknown', None, 'Mailbox could not be confirmed'
 
 
 # HTTP Request Handler
