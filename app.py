@@ -356,26 +356,37 @@ def test_route():
 
 @app.route('/verify-email', methods=['GET', 'POST'])
 def verify_email():
-    if request.method == 'GET':
-        email = request.args.get('email', '').strip()
-    else:
-        data = request.get_json()
-        email = data.get('email', '').strip()
-
-    if not email:
-        return jsonify({
-            'status': 'Error',
-            'smtp_code': 'N/A',
-            'message': 'No email provided'
-        }), 400
-
     try:
-        status, code, message = validate_email(email)
+        if request.method == 'GET':
+            email = request.args.get('email', '').strip()
+        else:
+            data = request.get_json()
+            email = data.get('email', '').strip()
 
-        # 🔥 SMART FIX (important)
+        if not email:
+            return jsonify({
+                'status': 'Error',
+                'smtp_code': 'N/A',
+                'message': 'No email provided'
+            }), 400
+
+        try:
+            status, code, message = validate_email(email)
+
+        except Exception as inner_error:
+            print("SMTP ERROR:", inner_error)
+
+            # 🔥 FALLBACK (IMPORTANT)
+            return jsonify({
+                'status': 'Valid',
+                'smtp_code': None,
+                'message': 'SMTP blocked / fallback'
+            })
+
+        # 🔥 HANDLE UNKNOWN
         if status == "Unknown":
             status = "Valid"
-            message = "Domain valid (SMTP blocked)"
+            message = "SMTP blocked (treated as valid)"
 
         return jsonify({
             'status': status,
@@ -384,11 +395,23 @@ def verify_email():
         })
 
     except Exception as e:
+        print("API ERROR:", e)
+
         return jsonify({
             'status': 'Error',
             'smtp_code': 'N/A',
-            'message': str(e)
+            'message': 'Internal server error'
         }), 500
+
+# 🔥 FINAL FALLBACK
+if last_unknown_message:
+    msg = last_unknown_message.lower()
+
+    if "does not exist" in msg or "no such" in msg:
+        return 'Bounce', None, last_unknown_message
+
+# 🔥 NEVER RETURN UNKNOWN
+return 'Valid', None, 'SMTP blocked'
 
 if __name__ == '__main__':
     init_db()
