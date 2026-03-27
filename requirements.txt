@@ -1,4 +1,3 @@
 Flask==3.0.0
 gunicorn
 dnspython
-python verify/singleemail.py
