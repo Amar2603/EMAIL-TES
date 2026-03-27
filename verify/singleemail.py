@@ -6,7 +6,8 @@ import random
 import string
 import json
 from time import sleep
-from flask import Flask, request, jsonify
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from urllib.parse import urlparse, parse_qs
 import os
 
 # Config
@@ -301,113 +302,153 @@ def smtp_check(mx_record, email, domain):
                 pass
 
 def validate_email(email):
-    # ---------------- FORMAT ----------------
     if not validate_email_format(email):
         return 'Invalid Format', None, 'Invalid email format'
 
     domain = email.split('@')[1]
-
-    # ---------------- DNS CHECK ----------------
     domain_info = validate_domain(domain)
+    
     if not domain_info:
-        return 'Invalid Domain', None, 'Domain does not exist'
+        return 'Invalid Domain', None, 'Invalid domain or no DNS record found'
 
+    # Get the record for SMTP connection
     mx_record = domain_info['record']
+    
+    # If we only have domain_info['record a basic DNS record (not MX), we need special handling
+    if domain_info['type'] != 'MX':
+        # Try SMTP anyway with the IP or domain
+        try:
+            for _ in range(SMTP_RETRIES):
+                status, code, message = smtp_check(mx_record, email, domain)
+                # Return the actual SMTP result (Valid, Bounce, or Unknown)
+                if status in ('Valid', 'Catch-All'):
+                    return status, code, message
+                elif status == 'Bounce':
+                    return status, code, message
+                # Only retry on connection errors, not on Unknown
+                sleep(1)
+        except Exception as e:
+            pass
+        
+        # If SMTP fails, return syntax valid with domain info
+        return 'Valid', None, f'Email format valid, domain resolved via {domain_info["type"]}'
 
-    # ---------------- SMART PROVIDER DETECTION ----------------
-    popular_domains = [
-        'gmail.com', 'yahoo.com', 'outlook.com',
-        'hotmail.com', 'live.com', 'icloud.com'
-    ]
-
-    # ---------------- SMTP CHECK ----------------
-    last_message = None
-
-    try:
-        for _ in range(3):
-            status, code, message = smtp_check(mx_record, email, domain)
-
-            if status in ('Valid', 'Catch-All'):
-                return 'Valid', code, message
-
-            if status == 'Bounce':
-                return 'Bounce', code, message
-
-            last_message = message
+    # Try SMTP validation with MX record
+    last_unknown_message = None
+    for _ in range(SMTP_RETRIES):
+        status, code, message = smtp_check(mx_record, email, domain)
+        if status in ('Valid', 'Catch-All'):
+            return status, code, message
+        elif status == 'Bounce':
+            return status, code, message
+        elif status == 'Unknown':
+            last_unknown_message = message
             sleep(1)
+            continue
+        sleep(1)
 
-    except Exception as e:
-        last_message = str(e)
+    # Many providers block mailbox-level SMTP probing. If the domain has MX but
+    # never gives a hard bounce, treat it as valid at the domain level.
 
-    # ---------------- PRO FALLBACK ----------------
+    if last_unknown_message:
+        # Detect bounce from message
+        msg = last_unknown_message.lower()
 
-    if domain in popular_domains:
-        return 'Valid', None, 'Trusted provider (SMTP blocked)'
+        if "does not exist" in msg or "no such user" in msg or "5.1.1" in msg:
+            return 'Bounce', None, last_unknown_message
+    
+        return 'Unknown', None, last_unknown_message
 
-    if domain_info:
-        return 'Risky', None, last_message or 'SMTP blocked or no response'
-
-    return 'Unknown', None, 'Could not verify'
-
-
-app = Flask(__name__)
-
-# ---------------- SINGLE EMAIL ----------------
-@app.route('/verify-email', methods=['GET'])
-def verify_email_api():
-    email = request.args.get('email', '').strip()
-
-    if not email:
-        return jsonify({
-            'status': 'Error',
-            'smtp_code': None,
-            'message': 'No email provided'
-        }), 400
-
-    status, code, message = validate_email(email)
-
-    return jsonify({
-        'status': status,
-        'smtp_code': code,
-        'message': message
-    })
+    return 'Unknown', None, 'Mailbox could not be confirmed'
 
 
-# ---------------- LIST EMAIL ----------------
-@app.route('/verify-list', methods=['GET'])
-def verify_list_api():
-    emails_param = request.args.get('emails', '')
-    emails = [e.strip() for e in emails_param.split(',') if e.strip()]
+# HTTP Request Handler
+class RequestHandler(BaseHTTPRequestHandler):
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Max-Age', '86400')
+        self.end_headers()
+    
+    def do_GET(self):
+        parsed_path = urlparse(self.path)
+        path = parsed_path.path
+        query = parse_qs(parsed_path.query)
+        
+        # API: Verify single email
+        if path == '/verify-email':
+            email = query.get('email', [''])[0]
+            if not email:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({'status': 'Error', 'message': 'No email provided'}).encode())
+                return
+            
+            status, code, message = validate_email(email)
+            result = {
+                'status': status,
+                'smtp_code': code,
+                'message': message
+            }
+            
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps(result).encode())
+        
+        # API: Verify list of emails
+        elif path == '/verify-list':
+            emails_param = query.get('emails', [''])[0]
+            emails = [e.strip() for e in emails_param.split(',') if e.strip()]
+            
+            if not emails:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': 'No emails provided'}).encode())
+                return
+            
+            results = []
+            for email in emails:
+                status, code, message = validate_email(email)
+                results.append({
+                    'email': email,
+                    'status': status,
+                    'message': message
+                })
+            
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({'results': results, 'total': len(results)}).encode())
+        
+        else:
+            self.send_response(404)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': 'Not found'}).encode())
+    
+    def log_message(self, format, *args):
+        print(f"[{self.log_date_time_string()}] {format % args}")
 
-    if not emails:
-        return jsonify({'error': 'No emails provided'}), 400
-
-    results = []
-
-    for email in emails:
-        status, code, message = validate_email(email)
-        results.append({
-            'email': email,
-            'status': status,
-            'message': message
-        })
-
-    return jsonify({
-        'results': results,
-        'total': len(results)
-    })
-
-
-# ---------------- ROOT TEST ----------------
-@app.route('/')
-def home():
-    return "Flask Email Validator Running 🚀"
-
-
-# ---------------- RUN ----------------
-if __name__ == '__main__':
+def run_server():
     port = int(os.environ.get("PORT", 8001))
-    print("="*60)
-    print("Flask Email Verification Server Running 🚀")
-    print("="*60)
-    app.run(host='0.0.0.0', port=port)
+    server = HTTPServer(('0.0.0.0', port), RequestHandler)
+    print('='*60)
+    print('E-fy Single Email Verification Server')
+    print(f'Running at: http://localhost:{port}')
+    print('='*60)
+    print('Open your browser and go to: http://localhost:8001')
+    print('='*60)
+    server.serve_forever()
+
+if __name__ == '__main__':
+    run_server()
