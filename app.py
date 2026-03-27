@@ -5,7 +5,7 @@ import sqlite3
 from werkzeug.utils import secure_filename
 
 # 🔥 IMPORT YOUR VALIDATOR DIRECTLY (IMPORTANT)
-from emaildashboard.singleemail import validate_email
+from verify.singleemail import validate_email
 
 app = Flask(__name__, template_folder='.')
 
