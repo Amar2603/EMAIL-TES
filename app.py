@@ -59,9 +59,9 @@ def static_login():
 def serve_verify_files(filename):
     return send_from_directory('verify', filename)
 
-@app.route('/emaildashboard/<path:filename>')
-def serve_emaildashboard(filename):
-    return send_from_directory('emaildashboard', filename)
+@app.route('/verify/<path:filename>')
+def serve_verify_files(filename):
+    return send_from_directory('verify', filename)
 
 # ---------------- AUTH ----------------
 
