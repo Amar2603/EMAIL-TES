@@ -1186,12 +1186,25 @@ async function verifySingle(){
 
   let data;
   try{
-    const response=await fetch('https://email-tes.onrender.com/verify-email?email=' + encodeURIComponent(email));
-    data=await response.json();
-  }catch(error){
-    tryLocalVerification(email, result);
+    const response = await fetch('https://email-tes.onrender.com/verify-email?email=' + encodeURIComponent(email));
+
+    if(!response.ok){
+        throw new Error("API failed");
+    }
+
+    const text = await response.text();
+
+    try {
+        data = JSON.parse(text);
+    } catch(e){
+        result.innerHTML = "Server response error";
+        return;
+    }
+
+}catch(error){
+    result.innerHTML = "Server temporarily unavailable";
     return;
-  }
+}
 
   try{
     await spendCredits(CREDIT_COST_SINGLE);
