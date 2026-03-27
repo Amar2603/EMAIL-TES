@@ -350,22 +350,6 @@ def serve_emaildashboard(filename):
 def test_route():
     return 'Server is working!'
 
-@app.route('/verify-email', methods=['GET', 'POST'])
-def verify_email():
-    """Email verification endpoint"""
-    # Handle both GET and POST requests
-    if request.method == 'GET':
-        email = request.args.get('email', '').strip()
-    else:
-        data = request.get_json()
-        email = data.get('email', '').strip()
-    
-    if not email:
-        return jsonify({
-            'status': 'Error',
-            'smtp_code': 'N/A',
-            'message': 'No email provided'
-        }), 400
     
     # Get the path to singleemail.py
 from verify.singleemail import validate_email
