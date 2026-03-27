@@ -351,40 +351,37 @@ def serve_emaildashboard(filename):
 def test_route():
     return 'Server is working!'
 
-@app.route('/verify-email', methods=['GET', 'POST'])
-def verify_email():
-    if request.method == 'GET':
-        email = request.args.get('email', '').strip()
-    else:
-        data = request.get_json()
-        email = data.get('email', '').strip()
+@app.route('/verify-email', methods=['GET'])
+def verify_email_api():
+    email = request.args.get('email', '').strip()
 
     if not email:
         return jsonify({
             'status': 'Error',
-            'smtp_code': 'N/A',
+            'smtp_code': None,
             'message': 'No email provided'
         }), 400
 
     try:
-        status, smtp_code, message = validate_email(email)
+        status, code, message = validate_email(email)
 
-        # 🔥 FIX UNKNOWN HERE
+        # 🔥 REMOVE UNKNOWN COMPLETELY
         if status == "Unknown":
             status = "Risky"
-            message = "SMTP blocked or no response"
+            message = "SMTP blocked (handled smartly)"
 
         return jsonify({
             'status': status,
-            'smtp_code': smtp_code,
+            'smtp_code': code,
             'message': message
         })
 
     except Exception as e:
+        print("ERROR:", str(e))
         return jsonify({
             'status': 'Error',
-            'smtp_code': 'N/A',
-            'message': str(e)
+            'smtp_code': None,
+            'message': 'Server error'
         }), 500
     
 
