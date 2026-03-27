@@ -403,15 +403,7 @@ def verify_email():
             'message': 'Internal server error'
         }), 500
 
-# 🔥 FINAL FALLBACK
-if last_unknown_message:
-    msg = last_unknown_message.lower()
 
-    if "does not exist" in msg or "no such" in msg:
-        return 'Bounce', None, last_unknown_message
-
-# 🔥 NEVER RETURN UNKNOWN
-return 'Valid', None, 'SMTP blocked'
 
 if __name__ == '__main__':
     init_db()
