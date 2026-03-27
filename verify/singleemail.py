@@ -301,64 +301,53 @@ def smtp_check(mx_record, email, domain):
                 pass
 
 def validate_email(email):
+    # ---------------- FORMAT ----------------
     if not validate_email_format(email):
         return 'Invalid Format', None, 'Invalid email format'
 
     domain = email.split('@')[1]
+
+    # ---------------- DNS CHECK ----------------
     domain_info = validate_domain(domain)
-    
     if not domain_info:
-        return 'Invalid Domain', None, 'Invalid domain or no DNS record found'
+        return 'Invalid Domain', None, 'Domain does not exist'
 
-    # Get the record for SMTP connection
     mx_record = domain_info['record']
-    
-    # If we only have domain_info['record a basic DNS record (not MX), we need special handling
-    if domain_info['type'] != 'MX':
-        # Try SMTP anyway with the IP or domain
-        try:
-            for _ in range(SMTP_RETRIES):
-                status, code, message = smtp_check(mx_record, email, domain)
-                # Return the actual SMTP result (Valid, Bounce, or Unknown)
-                if status in ('Valid', 'Catch-All'):
-                    return status, code, message
-                elif status == 'Bounce':
-                    return status, code, message
-                # Only retry on connection errors, not on Unknown
-                sleep(1)
-        except Exception as e:
-            pass
-        
-        # If SMTP fails, return syntax valid with domain info
-        return 'Valid', None, f'Email format valid, domain resolved via {domain_info["type"]}'
 
-    # Try SMTP validation with MX record
-    last_unknown_message = None
-    for _ in range(SMTP_RETRIES):
-        status, code, message = smtp_check(mx_record, email, domain)
-        if status in ('Valid', 'Catch-All'):
-            return status, code, message
-        elif status == 'Bounce':
-            return status, code, message
-        elif status == 'Unknown':
-            last_unknown_message = message
+    # ---------------- SMART PROVIDER DETECTION ----------------
+    popular_domains = [
+        'gmail.com', 'yahoo.com', 'outlook.com',
+        'hotmail.com', 'live.com', 'icloud.com'
+    ]
+
+    # ---------------- SMTP CHECK ----------------
+    last_message = None
+
+    try:
+        for _ in range(3):
+            status, code, message = smtp_check(mx_record, email, domain)
+
+            if status in ('Valid', 'Catch-All'):
+                return 'Valid', code, message
+
+            if status == 'Bounce':
+                return 'Bounce', code, message
+
+            last_message = message
             sleep(1)
-            continue
-        sleep(1)
 
-    # Many providers block mailbox-level SMTP probing. If the domain has MX but
-    # never gives a hard bounce, treat it as valid at the domain level.
+    except Exception as e:
+        last_message = str(e)
 
-    if last_unknown_message:
-        # Detect bounce from message
-        msg = last_unknown_message.lower()
+    # ---------------- PRO FALLBACK ----------------
 
-        if "does not exist" in msg or "no such user" in msg or "5.1.1" in msg:
-            return 'Bounce', None, last_unknown_message
-    
-        return 'Unknown', None, last_unknown_message
+    if domain in popular_domains:
+        return 'Valid', None, 'Trusted provider (SMTP blocked)'
 
-    return 'Unknown', None, 'Mailbox could not be confirmed'
+    if domain_info:
+        return 'Risky', None, last_message or 'SMTP blocked or no response'
+
+    return 'Unknown', None, 'Could not verify'
 
 
 app = Flask(__name__)
