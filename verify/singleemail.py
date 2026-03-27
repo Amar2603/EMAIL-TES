@@ -8,6 +8,7 @@ import json
 from time import sleep
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
+import os
 
 # Config
 NUM_FAKE_CHECKS = 5
@@ -439,8 +440,8 @@ class RequestHandler(BaseHTTPRequestHandler):
         print(f"[{self.log_date_time_string()}] {format % args}")
 
 def run_server():
-    port = 8001
-    server = HTTPServer(('localhost', port), RequestHandler)
+    port = int(os.environ.get("PORT", 8001))
+    server = HTTPServer(('0.0.0.0', port), RequestHandler)
     print('='*60)
     print('E-fy Single Email Verification Server')
     print(f'Running at: http://localhost:{port}')
