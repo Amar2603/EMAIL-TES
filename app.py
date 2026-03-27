@@ -352,7 +352,6 @@ def test_route():
 
     
     # Get the path to singleemail.py
-from verify.singleemail import validate_email
 
 @app.route('/verify-email', methods=['GET', 'POST'])
 def verify_email():
