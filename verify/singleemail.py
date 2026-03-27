@@ -9,6 +9,68 @@ from time import sleep
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 import os
+import socks
+import socket
+import random
+import time
+
+# ===== PROXY LIST (cleaned from your file) =====
+RAW_PROXIES = [
+    ("86.53.183.16", 1080),
+    ("47.77.193.180", 1080),
+    ("103.17.246.60", 1080),
+    ("64.227.76.27", 1080),
+    ("194.67.99.223", 1080),
+    ("150.241.71.15", 1080),
+    ("195.123.213.129", 1080),
+    ("47.250.159.65", 1080),
+]
+
+WORKING_PROXIES = []
+BAD_PROXIES = set()
+
+def test_proxy(host, port, timeout=5):
+    try:
+        s = socks.socksocket()
+        s.set_proxy(socks.SOCKS5, host, port)
+        s.settimeout(timeout)
+        s.connect(("8.8.8.8", 53))  # test connection
+        s.close()
+        return True
+    except:
+        return False
+
+def load_working_proxies():
+    global WORKING_PROXIES
+    print("[INFO] Testing proxies...")
+
+    for host, port in RAW_PROXIES:
+        if test_proxy(host, port):
+            print(f"[OK] {host}:{port}")
+            WORKING_PROXIES.append((host, port))
+        else:
+            print(f"[BAD] {host}:{port}")
+            BAD_PROXIES.add((host, port))
+
+    print(f"[INFO] Working proxies: {len(WORKING_PROXIES)}")
+
+def enable_proxy():
+    if not WORKING_PROXIES:
+        print("[INFO] No working proxy, using direct connection")
+        socket.socket = socket._socketobject if hasattr(socket, "_socketobject") else socket.socket
+        return False
+
+    host, port = random.choice(WORKING_PROXIES)
+
+    try:
+        socks.set_default_proxy(socks.SOCKS5, host, port)
+        socket.socket = socks.socksocket
+        print(f"[PROXY] Using {host}:{port}")
+        return True
+    except:
+        BAD_PROXIES.add((host, port))
+        WORKING_PROXIES.remove((host, port))
+        return False
 
 # Config
 NUM_FAKE_CHECKS = 5
@@ -240,66 +302,47 @@ def categorize_smtp_response(code, message):
 
 def smtp_check(mx_record, email, domain):
     server = None
-    try:
-        server = smtplib.SMTP(mx_record, timeout=30)
+
+    for attempt in range(3):
+        use_proxy = enable_proxy()
+
         try:
+            server = smtplib.SMTP(mx_record, timeout=20)
             server.ehlo()
-        except Exception:
-            server.helo()
 
-        mail_ready, mail_code, mail_msg = establish_mail_from(server, domain)
-        if not mail_ready:
-            decoded_mail_msg = mail_msg.decode('utf-8', errors='ignore') if isinstance(mail_msg, bytes) else str(mail_msg)
-            return 'Unknown', mail_code, f'MAIL FROM rejected: {decoded_mail_msg}'
+            mail_ready, _, _ = establish_mail_from(server, domain)
+            if not mail_ready:
+                continue
 
-        code_real, msg_real = server.rcpt(email)
-        decoded_msg_real = msg_real.decode() if isinstance(msg_real, bytes) else str(msg_real)
+            code, msg = server.rcpt(email)
+            msg = msg.decode() if isinstance(msg, bytes) else str(msg)
 
-        if code_real == 503 and 'need mail command' in decoded_msg_real.lower():
-            mail_ready, mail_code, mail_msg = establish_mail_from(server, domain)
-            if mail_ready:
-                code_real, msg_real = server.rcpt(email)
-                decoded_msg_real = msg_real.decode() if isinstance(msg_real, bytes) else str(msg_real)
-            else:
-                decoded_mail_msg = mail_msg.decode('utf-8', errors='ignore') if isinstance(mail_msg, bytes) else str(mail_msg)
-                return 'Unknown', mail_code, f'MAIL FROM rejected: {decoded_mail_msg}'
+            if ENABLE_CATCH_ALL_CHECK and smtp_accepts_recipient(code, msg):
+                if detect_catch_all(server, domain):
+                    return 'Catch-All', code, msg
 
-        # Catch-All Detection
-        if ENABLE_CATCH_ALL_CHECK and smtp_accepts_recipient(code_real, decoded_msg_real):
-            if detect_catch_all(server, domain):
-                return 'Catch-All', code_real, f'{decoded_msg_real} | catch-all probe accepted'
-            return 'Valid', code_real, decoded_msg_real
+            return categorize_smtp_response(code, msg), code, msg
 
-        result = categorize_smtp_response(code_real, decoded_msg_real)
-        return result, code_real, decoded_msg_real
+        except Exception as e:
+            print(f"[ERROR] Attempt {attempt+1}: {e}")
 
-    except smtplib.SMTPServerDisconnected:
-        return 'Unknown', None, 'Server disconnected - possibly blocking connections'
-    except smtplib.SMTPConnectError:
-        return 'Unknown', None, 'Connection error - server may be blocking'
-    except smtplib.SMTPException as e:
-        error_msg = str(e).lower()
-        if 'timeout' in error_msg:
-            return 'Unknown', None, 'Temporary server error - connection timeout'
-        return 'Unknown', None, f'Temporary server error - {str(e)}'
-    except TimeoutError:
-        return 'Unknown', None, 'Connection timed out'
-    except socket.timeout:
-        return 'Unknown', None, 'Connection timed out'
-    except Exception as e:
-        error_msg = str(e).lower()
-        if 'timeout' in error_msg:
-            return 'Unknown', None, 'Connection timed out'
-        elif 'connection' in error_msg:
-            return 'Unknown', None, 'Connection failed - server may be blocking'
-        else:
-            return 'Unknown', None, str(e)
-    finally:
-        if server is not None:
-            try:
-                server.quit()
-            except Exception:
-                pass
+            # Remove bad proxy if used
+            if use_proxy and WORKING_PROXIES:
+                try:
+                    WORKING_PROXIES.pop()
+                except:
+                    pass
+
+            time.sleep(1)
+
+        finally:
+            if server:
+                try:
+                    server.quit()
+                except:
+                    pass
+
+    return 'Unknown', None, 'All attempts failed'
 
 def validate_email(email):
     if not validate_email_format(email):
@@ -451,4 +494,5 @@ def run_server():
     server.serve_forever()
 
 if __name__ == '__main__':
+    load_working_proxies()
     run_server()
