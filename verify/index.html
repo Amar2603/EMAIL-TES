@@ -1186,7 +1186,7 @@ async function verifySingle(){
 
   let data;
   try{
-    const response = await fetch('https://email-tes.onrender.com/verify-email?email=' + encodeURIComponent(email));
+    const response = await fetch('/verify-email?email=' + encodeURIComponent(email));
 
     if(!response.ok){
         throw new Error("API failed");
@@ -1216,17 +1216,6 @@ async function verifySingle(){
   result.innerHTML='Status: ' + data.status + '<br>SMTP Code: ' + (data.smtp_code || 'N/A') + '<br>Message: ' + (data.message || '');
 }
 
-async function tryLocalVerification(email, result) {
-  result.innerHTML = "Trying local verification...";
-  result.innerHTML = "Server not running.<br><br>" +
-    "To use this tool, please:<br>" +
-    "1. Open terminal/command prompt<br>" +
-    "2. Navigate to the payment folder<br>" +
-    "3. Run: <code>python verify/server.py</code><br>" +
-    "4. Open <code>http://localhost:8001</code> in browser<br><br>" +
-    "<em>Or use the CLI tool:</em><br>" +
-    "<code>python verify/singleemail.py</code>";
-}
 
 let selectedUploadFile = null;
 let listRunCounter = 0;
