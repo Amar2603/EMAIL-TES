@@ -1,9 +1,9 @@
 from flask import Flask, request, redirect, url_for, send_from_directory, jsonify, render_template
 import os
 import sys
+import subprocess
 import sqlite3
 from werkzeug.utils import secure_filename
-from verify.singleemail import validate_email
 
 app = Flask(__name__, template_folder='.')
 DB_FILE = 'users.db'
@@ -351,59 +351,68 @@ def serve_emaildashboard(filename):
 def test_route():
     return 'Server is working!'
 
-    
-    # Get the path to singleemail.py
-
 @app.route('/verify-email', methods=['GET', 'POST'])
 def verify_email():
-    try:
-        if request.method == 'GET':
-            email = request.args.get('email', '').strip()
-        else:
-            data = request.get_json()
-            email = data.get('email', '').strip()
-
-        if not email:
-            return jsonify({
-                'status': 'Error',
-                'smtp_code': 'N/A',
-                'message': 'No email provided'
-            }), 400
-
-        try:
-            status, code, message = validate_email(email)
-
-        except Exception as inner_error:
-            print("SMTP ERROR:", inner_error)
-
-            # 🔥 FALLBACK (IMPORTANT)
-            return jsonify({
-                'status': 'Valid',
-                'smtp_code': None,
-                'message': 'SMTP blocked / fallback'
-            })
-
-        # 🔥 HANDLE UNKNOWN
-        if status == "Unknown":
-            status = "Valid"
-            message = "SMTP blocked (treated as valid)"
-
-        return jsonify({
-            'status': status,
-            'smtp_code': code,
-            'message': message
-        })
-
-    except Exception as e:
-        print("API ERROR:", e)
-
+    """Email verification endpoint"""
+    # Handle both GET and POST requests
+    if request.method == 'GET':
+        email = request.args.get('email', '').strip()
+    else:
+        data = request.get_json()
+        email = data.get('email', '').strip()
+    
+    if not email:
         return jsonify({
             'status': 'Error',
             'smtp_code': 'N/A',
-            'message': 'Internal server error'
+            'message': 'No email provided'
+        }), 400
+    
+    # Get the path to singleemail.py
+    script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'emaildashboard', 'singleemail.py')
+    
+    try:
+        # Run the Python script with email as argument
+        result = subprocess.run(
+            [sys.executable, script_path, email],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        output = result.stdout
+        
+        # Parse the output
+        status = 'Unknown'
+        smtp_code = 'N/A'
+        message = 'No response'
+        
+        for line in output.split('\n'):
+            if line.startswith('Status:'):
+                status = line.split(':', 1)[1].strip()
+            elif line.startswith('SMTP Code:'):
+                smtp_code = line.split(':', 1)[1].strip()
+            elif line.startswith('Message:'):
+                message = line.split(':', 1)[1].strip()
+        
+        return jsonify({
+            'status': status,
+            'smtp_code': smtp_code,
+            'message': message
+        })
+        
+    except subprocess.TimeoutExpired:
+        return jsonify({
+            'status': 'Error',
+            'smtp_code': 'N/A',
+            'message': 'Verification timeout'
         }), 500
-
-
+    except Exception as e:
+        return jsonify({
+            'status': 'Error',
+            'smtp_code': 'N/A',
+            'message': str(e)
+        }), 500
 
 if __name__ == '__main__':
     init_db()
