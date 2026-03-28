@@ -1186,25 +1186,12 @@ async function verifySingle(){
 
   let data;
   try{
-    const response = await fetch('/verify-email?email=' + encodeURIComponent(email));
-
-    if(!response.ok){
-        throw new Error("API failed");
-    }
-
-    const text = await response.text();
-
-    try {
-        data = JSON.parse(text);
-    } catch(e){
-        result.innerHTML = "Server response error";
-        return;
-    }
-
-}catch(error){
-    result.innerHTML = "Server temporarily unavailable";
+    const response=await fetch('http://localhost:8001/verify-email?email=' + encodeURIComponent(email));
+    data=await response.json();
+  }catch(error){
+    tryLocalVerification(email, result);
     return;
-}
+  }
 
   try{
     await spendCredits(CREDIT_COST_SINGLE);
@@ -1216,6 +1203,17 @@ async function verifySingle(){
   result.innerHTML='Status: ' + data.status + '<br>SMTP Code: ' + (data.smtp_code || 'N/A') + '<br>Message: ' + (data.message || '');
 }
 
+async function tryLocalVerification(email, result) {
+  result.innerHTML = "Trying local verification...";
+  result.innerHTML = "Server not running.<br><br>" +
+    "To use this tool, please:<br>" +
+    "1. Open terminal/command prompt<br>" +
+    "2. Navigate to the payment folder<br>" +
+    "3. Run: <code>python verify/server.py</code><br>" +
+    "4. Open <code>http://localhost:8001</code> in browser<br><br>" +
+    "<em>Or use the CLI tool:</em><br>" +
+    "<code>python verify/singleemail.py</code>";
+}
 
 let selectedUploadFile = null;
 let listRunCounter = 0;
